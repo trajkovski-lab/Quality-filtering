@@ -1,0 +1,3 @@
+database: ../resources/database/
+output_dir: ../results/
+format: .fasta

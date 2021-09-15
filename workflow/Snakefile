@@ -1,0 +1,34 @@
+configfile: "../config/config.yaml"
+
+
+rule download_db:
+    output:
+        db=config["database"] + "gunc_db_{version}dmnd",
+    params:
+        database_dir=config["database"],
+    shell:
+        "gunc download_db {params.database_dir}"
+
+
+rule unzip:
+    input:
+        "../genomes/{sample}.{format}.gz",
+    output:
+        "../genomes/{sample}.{format}",
+    shell:
+        "gunzip {input}"
+
+
+rule gunc_run:
+    input:
+        db=config["database"] + "gunc_db_{version}.dmnd",
+        fasta_file=f"../genomes/{{sample}}{config['format']}",
+    params:
+        format=config["format"],
+    output:
+        output_dir="../results/GUNC.{version}maxCSS_level.{sample}.tsv",
+    threads: 4
+    shell:
+        "gunc run --db_file {input.db} --input_fasta {input.fasta_file} "
+        "--file_suffix {params.format} "
+        "--out_dir ../results"
