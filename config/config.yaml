@@ -1,0 +1,5 @@
+genomes: ../genomes
+format: .fasta.gz
+database: ../resources/database/
+database_type: progenomes2.1 #progenomes2.1 or gtdb95
+output_dir: ../results/

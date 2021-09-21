@@ -1,0 +1,158 @@
+import glob
+import pandas as pd
+import os
+
+
+scattergather:
+    split=2,
+
+
+configfile: "../config/config.yaml"
+
+
+rule all:
+    input:
+        "../results/final",
+        "../results/final_busco",
+
+
+rule download_db:
+    output:
+        db=config["database"] + "gunc_db_" + config["database_type"] + ".dmnd",
+    params:
+        database_dir=config["database"],
+        database_type=config["database_type"].rstrip("2.1").rstrip("95"),
+    shell:
+        "gunc download_db {params.database_dir} -db {params.database_type}"
+
+
+rule make_lists:
+    input:
+        config["genomes"],
+    output:
+        scatter.split("genome_list/{scatteritem}.txt"),
+    run:
+        glob_argument = f"{config['genomes']}/*{config['format']}"
+        all_genomes = glob.glob(glob_argument)
+        n = len(output)
+        step = len(all_genomes) // n
+        for i in range(n):
+            with open(output[i], "w") as f:
+                for path in all_genomes[(i * step) : ((i + 1) * step)]:
+                    f.write(path + " ")
+                if i <= (len(all_genomes) % n):
+                    f.write(all_genomes[-i])
+
+
+rule copy_MAGs:
+    input:
+        "genome_list/{scatteritem}.txt",
+    output:
+        directory("/tmp/tmp_unzipped.{scatteritem}/"),
+    shell:
+        "mkdir {output} && ( cat {input}; echo; echo {output} ) | xargs cp"
+
+
+rule unzip:
+    input:
+        "/tmp/tmp_unzipped.{scatteritem}",
+    output:
+        temp(touch("/tmp/tmp_unzipped.{scatteritem}.unzipped")),
+    shell:
+        "cd {input} && gunzip -q *.gz"
+
+
+rule run_gunc:
+    input:
+        db=rules.download_db.output,
+        fasta_dir="/tmp/tmp_unzipped.{scatteritem}",
+        flag="/tmp/tmp_unzipped.{scatteritem}.unzipped",
+    output:
+        directory("/tmp/results.{scatteritem}/"),
+    conda:
+        "envs/gunc.yaml"
+    params:
+        format=config["format"].rstrip(".gz"),
+    threads: 8
+    shell:
+        "mkdir {output} && gunc run --db_file {input.db} --input_dir {input.fasta_dir}/ "
+        "--file_suffix {params.format} "
+        "--out_dir {output[0]}"
+
+
+rule concatenate_gunc:
+    input:
+        gather.split(rules.run_gunc.output),
+    output:
+        temp(touch("../results/final")),
+    run:
+        GUNC_output = pd.DataFrame()
+        for i in input:
+            glob_argument = f"{i}/*.tsv"
+            for path_to_tsv in glob.glob(glob_argument):
+                tmp_df = pd.read_csv(path_to_tsv, sep="\t")
+                GUNC_output = pd.concat([GUNC_output, tmp_df], ignore_index=True)
+                GUNC_output.to_csv("../results/GUNC_output.tsv", sep="\t")
+
+
+rule run_busco:
+    input:
+        fasta_dir="/tmp/tmp_unzipped.{scatteritem}",
+        flag="/tmp/tmp_unzipped.{scatteritem}.unzipped",
+    output:
+        directory("/tmp/results_busco/{scatteritem}/"),
+    conda:
+        "envs/busco.yaml"
+    params:
+        working_dir=lambda wcs, output: os.path.dirname(output[0]),
+    threads: 8
+    resources:
+        mem_mb=100000,
+    shell:
+        "cd {params.working_dir} && busco -i {input.fasta_dir} --auto-lineage-prok -m genome -o {wildcards.scatteritem} -c {threads}"
+
+
+rule concatenate_busco:
+    input:
+        gather.split(rules.run_busco.output),
+    output:
+        temp(touch("../results/final_busco")),
+    run:
+        BUSCO_output = pd.DataFrame()
+        for i in input:
+            glob_argument = f"{i}/batch_summary.txt"
+            for path_to_summary in glob.glob(glob_argument):
+                tmp_df = pd.read_csv(path_to_summary, sep="\t")
+                dictionary = {
+                    "level_0": "Input",
+                    "level_1": "DataSet",
+                    "level_2": "Complete_BUSCO",
+                    "Input_file": "Single_BUSCO",
+                    "Dataset": "Duplicated_BUSCO",
+                    "Complete": "Fragmented_BUSCO",
+                    "Single": "Missing_BUSCO",
+                    "Duplicated": "N_markers",
+                }
+                tmp_df = (
+                    tmp_df.reset_index()
+                    .rename(dictionary, axis=1)
+                    .drop(["Fragmented", "Missing", "n_markers"], axis=1)
+                )
+                BUSCO_output = pd.concat([BUSCO_output, tmp_df], ignore_index=True)
+        for n in range(len(BUSCO_output) - 1):
+            if BUSCO_output.iloc[n].Input == ".snakemake_timestamp":
+                BUSCO_output = (
+                    BUSCO_output.drop(n, axis=0).reset_index().drop("index", axis=1)
+                )
+        BUSCO_output["Completeness"] = (
+            BUSCO_output["Complete_BUSCO"] + (0.5 * BUSCO_output["Fragmented_BUSCO"])
+        ) / BUSCO_output["N_markers"]
+        BUSCO_output["Contamination"] = (
+            BUSCO_output["Duplicated_BUSCO"] / BUSCO_output["N_markers"]
+        )
+        BUSCO_output["Quality_score"] = (
+            BUSCO_output["Completeness"]
+            - 5 * BUSCO_output["Contamination"]
+            - (BUSCO_output["Fragmented_BUSCO"] / BUSCO_output["N_markers"])
+        )
+        BUSCO_output.to_csv("../results/BUSCO_output.tsv", sep="\t")
