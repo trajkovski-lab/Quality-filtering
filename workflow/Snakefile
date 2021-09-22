@@ -70,11 +70,15 @@ rule run_gunc:
         "envs/gunc.yaml"
     params:
         format=config["format"].rstrip(".gz"),
+    log:
+        "log/gunc/run_{scatteritem}.log"
+    benchmark:
+        "log/benchmark/gunc/{scatteritem}.tsv"
     threads: 8
     shell:
-        "mkdir {output} && gunc run --db_file {input.db} --input_dir {input.fasta_dir}/ "
+        "mkdir {output} && gunc run --threads {threads} --db_file {input.db} --input_dir {input.fasta_dir}/ "
         "--file_suffix {params.format} "
-        "--out_dir {output}"
+        "--out_dir {output} &> {log}"
 
 
 rule concatenate_gunc:
