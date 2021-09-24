@@ -20,7 +20,7 @@ rule download_db:
     output:
         db=f'{config["database_folder"]}/gunc_db_{{gunc_db_type}}.dmnd',
     conda:
-        "env/gunc.yaml"
+        "envs/gunc.yaml"
     log:
         "log/gunc/download_db{gunc_db_type}.log",
     shell:
