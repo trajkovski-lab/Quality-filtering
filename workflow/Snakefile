@@ -41,7 +41,7 @@ rule copy_MAGs:
     input:
         "genome_list/{scatteritem}.txt",
     output:
-        temp(directory("intermediate_dir/tmp_unzipped.{scatteritem}/")),
+        directory("intermediate_dir/tmp_unzipped.{scatteritem}/"),
     group:
         "{scatteritem}"
     shell:
@@ -59,11 +59,29 @@ rule unzip:
         "cd {input} && gunzip -q *.gz"
 
 
+rule prodigal:
+    input:
+        fasta_dir=rules.copy_MAGs.output,
+        flag=rules.unzip.output,
+    output:
+        #faa = "intermediate_dir/results_prodigal_{scatteritem}/{sample}.faa",
+        #gff = "intermediate_dir/results_prodigal_{scatteritem}/{sample}.gff",
+        directory("intermediate_dir/results_prodigal_{scatteritem}/"),
+    run:
+        for i in input.fasta_dir:
+            command_os = f"mkdir {output}"
+            os.system(command_os)
+            glob_argument = f"{i}/*.fasta"
+            for path in glob.glob(glob_argument):
+                sample_name = path.split("/")[-1].split(".")[0]
+                command = f"prodigal -q -p meta -i {path} -d {output}/{sample_name}.fasta"
+                os.system(command)
+
+
 rule run_gunc:
     input:
         db="{database_folder}/gunc_db_{gunc_db_type}.dmnd".format(**config),
-        fasta_dir=rules.copy_MAGs.output,
-        flag=rules.unzip.output,
+        fasta_dir="intermediate_dir/results_prodigal_{scatteritem}",
     output:
         directory("intermediate_dir/results_gunc_{scatteritem}/"),
     conda:
@@ -92,8 +110,7 @@ rule concatenate_gunc:
 
 rule run_busco:
     input:
-        fasta_dir=rules.copy_MAGs.output,
-        flag=rules.unzip.output,
+        fasta_dir="intermediate_dir/results_prodigal_{scatteritem}",
     output:
         "intermediate_dir/results_busco/{scatteritem}_batch_summary.txt",
     conda:
