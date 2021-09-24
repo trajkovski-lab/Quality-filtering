@@ -4,7 +4,7 @@ import os
 
 
 scattergather:
-    split=2,
+    split=8,
 
 
 configfile: "../config/config.yaml"
@@ -20,7 +20,7 @@ rule download_db:
     output:
         db=f'{config["database_folder"]}/gunc_db_{{gunc_db_type}}.dmnd',
     conda:
-        "envs/gunc.yaml"
+        "env/gunc.yaml"
     log:
         "log/gunc/download_db{gunc_db_type}.log",
     shell:
@@ -64,9 +64,11 @@ rule prodigal:
         fasta_dir=rules.copy_MAGs.output,
         flag=rules.unzip.output,
     output:
-        #faa = "intermediate_dir/results_prodigal_{scatteritem}/{sample}.faa",
-        #gff = "intermediate_dir/results_prodigal_{scatteritem}/{sample}.gff",
         directory("intermediate_dir/results_prodigal_{scatteritem}/"),
+    conda:
+        "envs/prodigal.yaml"
+    log:
+        "log/prodigal/{scatteritem}.log",
     run:
         for i in input.fasta_dir:
             command_os = f"mkdir {output}"
@@ -74,7 +76,7 @@ rule prodigal:
             glob_argument = f"{i}/*.fasta"
             for path in glob.glob(glob_argument):
                 sample_name = path.split("/")[-1].split(".")[0]
-                command = f"prodigal -q -p meta -i {path} -d {output}/{sample_name}.fasta"
+                command = f"prodigal -q -p meta -i {path} -a {output}/{sample_name}.faa &> {log}"
                 os.system(command)
 
 
@@ -86,8 +88,6 @@ rule run_gunc:
         directory("intermediate_dir/results_gunc_{scatteritem}/"),
     conda:
         "envs/gunc.yaml"
-    params:
-        format=config["format"].rstrip(".gz"),
     log:
         "log/gunc/run_{scatteritem}.log"
     benchmark:
@@ -95,7 +95,7 @@ rule run_gunc:
     threads: 8
     shell:
         "mkdir {output} && gunc run --threads {threads} --db_file {input.db} --input_dir {input.fasta_dir}/ "
-        "--file_suffix {params.format} "
+        "--file_suffix .faa --gene_calls "
         "--out_dir {output} &> {log}"
 
 
@@ -128,7 +128,7 @@ rule run_busco:
     resources:
         mem_mb=100000,
     shell:
-        "busco -i {input.fasta_dir} {params.busco_parameters} -m genome "
+        "busco -i {input.fasta_dir} {params.busco_parameters} -m protein "
         "-o {params.output_dir} -c {threads} &> {log} ;"
         "mv {params.output_dir}/batch_summary.txt {output} 2>> {log}"
 
