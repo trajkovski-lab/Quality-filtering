@@ -6,6 +6,6 @@ for i in snakemake.input.fasta_dir:
     os.system(command_os)
     glob_argument = f"{i}/*.fasta"
     for path in glob.glob(glob_argument):
-        sample_name = path.split("/")[-1].split(".")[0]
-        command = f"prodigal -q -p meta -i {path} -a {snakemake.output}/{sample_name}.faa &> {log}"
+        sample_name = path.split("/")[-1].split(".")[:-1]
+        command = f"prodigal -q -p meta -i {path} -a {snakemake.output}/{sample_name}.faa"
         os.system(command)

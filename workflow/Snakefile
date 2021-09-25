@@ -4,7 +4,7 @@ import os
 
 
 scattergather:
-    split=8,
+    split=2,
 
 
 configfile: "../config/config.yaml"
@@ -66,10 +66,8 @@ rule prodigal:
     output:
         directory("intermediate_dir/results_prodigal_{scatteritem}/"),
     conda:
-        "envs/prodigal.yaml"
-    log:
-        "log/prodigal/{scatteritem}.log",
-    scripts:
+        "envs/prodigal.yaml",
+    script:
         "scripts/prodigal.py"
 
 
