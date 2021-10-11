@@ -41,7 +41,7 @@ rule copy_MAGs:
     input:
         "genome_list/{scatteritem}.txt",
     output:
-        temp(directory("intermediate_dir/tmp_unzipped.{scatteritem}/")),
+        directory("intermediate_dir/tmp_unzipped.{scatteritem}/"),
     group:
         "{scatteritem}"
     shell:
@@ -59,17 +59,26 @@ rule unzip:
         "cd {input} && gunzip -q *.gz"
 
 
+rule prodigal:
+    input:
+        fasta_dir=rules.copy_MAGs.output,
+        flag=rules.unzip.output,
+    output:
+        directory("intermediate_dir/results_prodigal_{scatteritem}/"),
+    conda:
+        "envs/prodigal.yaml",
+    script:
+        "scripts/prodigal.py"
+
+
 rule run_gunc:
     input:
         db="{database_folder}/gunc_db_{gunc_db_type}.dmnd".format(**config),
-        fasta_dir=rules.copy_MAGs.output,
-        flag=rules.unzip.output,
+        fasta_dir="intermediate_dir/results_prodigal_{scatteritem}",
     output:
         directory("intermediate_dir/results_gunc_{scatteritem}/"),
     conda:
         "envs/gunc.yaml"
-    params:
-        format=config["format"].rstrip(".gz"),
     log:
         "log/gunc/run_{scatteritem}.log"
     benchmark:
@@ -77,7 +86,7 @@ rule run_gunc:
     threads: 8
     shell:
         "mkdir {output} && gunc run --threads {threads} --db_file {input.db} --input_dir {input.fasta_dir}/ "
-        "--file_suffix {params.format} "
+        "--file_suffix .faa --gene_calls "
         "--out_dir {output} &> {log}"
 
 
@@ -92,8 +101,7 @@ rule concatenate_gunc:
 
 rule run_busco:
     input:
-        fasta_dir=rules.copy_MAGs.output,
-        flag=rules.unzip.output,
+        fasta_dir="intermediate_dir/results_prodigal_{scatteritem}",
     output:
         "intermediate_dir/results_busco/{scatteritem}_batch_summary.txt",
     conda:
@@ -111,7 +119,7 @@ rule run_busco:
     resources:
         mem_mb=100000,
     shell:
-        "busco -i {input.fasta_dir} {params.busco_parameters} -m genome "
+        "busco -i {input.fasta_dir} {params.busco_parameters} -m protein "
         "-o {params.output_dir} -c {threads} &> {log} ;"
         "mv {params.output_dir}/batch_summary.txt {output} 2>> {log}"
 
