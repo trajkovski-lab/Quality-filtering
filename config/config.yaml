@@ -1,7 +1,7 @@
-genomes: ../../../fna
+genomes: /Users/matija/uhgg_gff
 
 intermediate_dir: intermediate_dir
 format: .fna.gz
-database_folder: ../resources/database
+database_folder: ../resources/database/
 gunc_db_type: progenomes #progenomes or gtdb
-busco_parameters: "-l bacteria_odb10" #--auto-lineage-prok
+busco_parameters: --auto-lineage-prok #"-l bacteria_odb10" #--auto-lineage-prok
