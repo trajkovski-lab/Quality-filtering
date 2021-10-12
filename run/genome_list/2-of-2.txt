@@ -1,1 +1,0 @@
-/Users/matija/uhgg_gff/GCF_001277175.1_ASM127717v1_genomic.fna /Users/matija/uhgg_gff/GCF_001683375.1_ASM168337v1_genomic.fna
