@@ -2,13 +2,7 @@ import glob
 import pandas as pd
 import os
 
-
-scattergather:
-    split=200,
-
-
-configfile: f"{os.path.dirname(workflow.snakefile)}/../config/default_config.yaml"
-
+include: "functions.smk"
 
 rule all:
     input:
@@ -16,13 +10,15 @@ rule all:
         "results/BUSCO_output.tsv",
 
 
+
+
 rule download_db:
     output:
-        db=f'{config["database_folder"]}/gunc_db_{{gunc_db_type}}.dmnd',
+        db= os.path.join(config["database_folder"], "gunc_db_{gunc_db_type}.dmnd"),
     conda:
         "env/gunc.yaml"
     log:
-        "log/gunc/download_db{gunc_db_type}.log",
+        "log/gunc/download_db_{gunc_db_type}.log",
     shell:
         "gunc download_db {resources.tmpdir} -db {wildcards.gunc_db_type} &> {log} ;"
         "mv {resources.tmpdir}/gunc_db_{wildcards.gunc_db_type}*.dmnd {output} 2>> {log}"
@@ -77,7 +73,7 @@ if config['format1'].split(".")[-1] == "gz":
 else:
     rule any2fasta:
         input:
-            working_dir=rules.copy_MAGs.output,
+            working_dir=rules.copy_MAGs.output[0],
         output:
             directory("intermediate_dir/results_any2fasta/{scatteritem}"),
         log:
@@ -108,7 +104,7 @@ rule prodigal:
 
 rule run_gunc:
     input:
-        db="{database_folder}/gunc_db_{gunc_db_type}.dmnd".format(**config),
+        db= rules.download_db.output[0].format(**config),
         fasta_dir=rules.prodigal.output,
     output:
         directory("intermediate_dir/results_gunc/{scatteritem}/"),

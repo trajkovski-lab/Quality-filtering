@@ -6,3 +6,4 @@ format2: #leave empty if only one format is present
 database_folder: ../resources/database/
 gunc_db_type: gtdb #progenomes or gtdb
 busco_parameters: --auto-lineage-prok #"-l bacteria_odb10" #--auto-lineage-prok
+batch_size: 50
