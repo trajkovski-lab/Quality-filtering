@@ -47,32 +47,44 @@ rule copy_MAGs:
     shell:
         "mkdir {output} && ( cat {input}; echo; echo {output} ) | xargs cp"
 
+        
+if config['format'].split(".")[-1] == "gz":
+    rule unzip:
+        input:
+            rules.copy_MAGs.output,
+        output:
+            temp(touch("intermediate_dir/tmp_unzipped/{scatteritem}.unzipped")),
+        group:
+            "{scatteritem}"
+        shell:
+            "gunzip -q {input}/*"
 
-rule unzip:
-    input:
-        rules.copy_MAGs.output,
-    output:
-        temp(touch("intermediate_dir/tmp_unzipped/{scatteritem}.unzipped")),
-    group:
-        "{scatteritem}"
-    shell:
-        "cd {input} && gunzip -q *.gz"
+    rule any2fasta:
+        input:
+            working_dir=rules.copy_MAGs.output,
+            flag=rules.unzip.output,
+        output:
+            directory("intermediate_dir/results_any2fasta/{scatteritem}"),
+        log:
+            "log/any2fasta/{scatteritem}.log",
+        conda:
+            "envs/any2fasta.yaml"
+        script:
+            "scripts/any2fasta.py"
+else:
+     rule any2fasta:
+        input:
+            working_dir=rules.copy_MAGs.output,
+        output:
+            directory("intermediate_dir/results_any2fasta/{scatteritem}"),
+        log:
+            "log/any2fasta/{scatteritem}.log",
+        conda:
+            "envs/any2fasta.yaml"
+        script:
+            "scripts/any2fasta.py"
 
-
-rule any2fasta:
-    input:
-        working_dir=rules.copy_MAGs.output,
-        flag=rules.unzip.output,
-    output:
-        directory("intermediate_dir/results_any2fasta/{scatteritem}"),
-    log:
-        "log/any2fasta/{scatteritem}.log",
-    conda:
-        "envs/any2fasta.yaml"
-    script:
-        "scripts/any2fasta.py"
-
-
+            
 rule prodigal:
     input:
         fasta_dir=rules.any2fasta.output,
