@@ -1,2 +1,4 @@
 .snakemake/
 .DS_Store
+config/*
+!config/default_config.yaml

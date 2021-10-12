@@ -71,7 +71,7 @@ if config['format1'].split(".")[-1] == "gz":
         log:
             "log/any2fasta/{scatteritem}.log",
         conda:
-            "envs/any2fasta.yaml"
+            "env/any2fasta.yaml"
         script:
             "scripts/any2fasta.py"
 else:
@@ -83,7 +83,7 @@ else:
         log:
             "log/any2fasta/{scatteritem}.log",
         conda:
-            "envs/any2fasta.yaml"
+            "env/any2fasta.yaml"
         script:
             "scripts/any2fasta.py"
 
@@ -113,7 +113,7 @@ rule run_gunc:
     output:
         directory("intermediate_dir/results_gunc/{scatteritem}/"),
     conda:
-        "envs/gunc.yaml"
+        "env/gunc.yaml"
     log:
         "log/gunc/run_{scatteritem}.log",
     benchmark:
@@ -140,7 +140,7 @@ rule run_busco:
     output:
         directory("intermediate_dir/results_busco/{scatteritem}/"),
     conda:
-        "envs/busco.yaml"
+        "env/busco.yaml"
     log:
         "log/busco/run_{scatteritem}.log",
     benchmark:
