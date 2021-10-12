@@ -7,7 +7,7 @@ scattergather:
     split=200,
 
 
-configfile: f"{os.path.dirname(workflow.snakefile)}/../config/config.yaml"
+configfile: f"{os.path.dirname(workflow.snakefile)}/../config/default_config.yaml"
 
 
 rule all:
