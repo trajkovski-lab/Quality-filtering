@@ -4,10 +4,10 @@ import os
 
 
 scattergather:
-    split=2,
+    split=200,
 
 
-configfile: "../config/config.yaml"
+configfile: f"{os.path.dirname(workflow.snakefile)}/../config/config.yaml"
 
 
 rule all:
