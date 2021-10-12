@@ -20,7 +20,7 @@ rule download_db:
     output:
         db=f'{config["database_folder"]}/gunc_db_{{gunc_db_type}}.dmnd',
     conda:
-        "envs/gunc.yaml"
+        "env/gunc.yaml"
     log:
         "log/gunc/download_db{gunc_db_type}.log",
     shell:
@@ -30,7 +30,7 @@ rule download_db:
 
 rule make_lists:
     input:
-        config["genomes"],
+        config['genomes'],
     output:
         scatter.split("genome_list/{scatteritem}.txt"),
     script:
@@ -47,17 +47,20 @@ rule copy_MAGs:
     shell:
         "mkdir {output} && ( cat {input}; echo; echo {output} ) | xargs cp"
 
-        
-if config['format'].split(".")[-1] == "gz":
+
+if config['format1'].split(".")[-1] == "gz":
     rule unzip:
         input:
             rules.copy_MAGs.output,
         output:
             temp(touch("intermediate_dir/tmp_unzipped/{scatteritem}.unzipped")),
+        log:
+            "log/unzip/{scatteritem}.log"
         group:
             "{scatteritem}"
         shell:
             "gunzip -q {input}/*"
+
 
     rule any2fasta:
         input:
@@ -72,7 +75,7 @@ if config['format'].split(".")[-1] == "gz":
         script:
             "scripts/any2fasta.py"
 else:
-     rule any2fasta:
+    rule any2fasta:
         input:
             working_dir=rules.copy_MAGs.output,
         output:
@@ -84,7 +87,7 @@ else:
         script:
             "scripts/any2fasta.py"
 
-            
+
 rule prodigal:
     input:
         fasta_dir=rules.any2fasta.output,
@@ -145,8 +148,6 @@ rule run_busco:
     params:
         output_dir=".busco_temp/{scatteritem}",
         busco_parameters=config["busco_parameters"],
-    # shadow:
-    #    "full"
     threads: 8
     # resources:
     #    mem_mb=100000,

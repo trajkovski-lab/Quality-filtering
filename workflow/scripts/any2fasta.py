@@ -11,7 +11,7 @@ with open(snakemake.log[0], 'w') as f:
             sample_name = "".join(path.split("/")[-1].split(".")[:-1])
             command = f"any2fasta {path} > {snakemake.output}/{sample_name}.fasta"
             os.system(command)
-        unzipped_format = snakemake.config['format'].strip(".gz")
+        unzipped_format = snakemake.config['format1'].strip(".gz")
         glob_argument_fasta = f"{i}/*{unzipped_format}"
         if glob.glob(glob_argument_fasta):
             for path_fasta in glob.glob(glob_argument_fasta):
