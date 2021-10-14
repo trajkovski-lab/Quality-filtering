@@ -2,7 +2,12 @@ import glob
 import pandas as pd
 import os
 
+
+configfile: f"{os.path.dirname(workflow.snakefile)}/../config/default_config.yaml"
+
+
 include: "functions.smk"
+
 
 rule all:
     input:
@@ -10,11 +15,9 @@ rule all:
         "results/BUSCO_output.tsv",
 
 
-
-
 rule download_db:
     output:
-        db= os.path.join(config["database_folder"], "gunc_db_{gunc_db_type}.dmnd"),
+        db=os.path.join(config["database_folder"], "gunc_db_{gunc_db_type}.dmnd"),
     conda:
         "env/gunc.yaml"
     log:
@@ -26,71 +29,37 @@ rule download_db:
 
 rule make_lists:
     input:
-        config['genomes'],
+        config["genomes"],
     output:
         scatter.split("genome_list/{scatteritem}.txt"),
     script:
         "scripts/make_lists.py"
 
 
-rule copy_MAGs:
+rule any2fasta:
     input:
-        "genome_list/{scatteritem}.txt",
+        lists="genome_list/{scatteritem}.txt",
     output:
-        directory("intermediate_dir/tmp_unzipped/{scatteritem}/"),
+        directory(f"{config['intermediate_dir']}/results_any2fasta/{{scatteritem}}"),
+    log:
+        "log/any2fasta/{scatteritem}.log",
     group:
         "{scatteritem}"
-    shell:
-        "mkdir {output} && ( cat {input}; echo; echo {output} ) | xargs cp"
-
-
-if config['format1'].split(".")[-1] == "gz":
-    rule unzip:
-        input:
-            rules.copy_MAGs.output,
-        output:
-            temp(touch("intermediate_dir/tmp_unzipped/{scatteritem}.unzipped")),
-        log:
-            "log/unzip/{scatteritem}.log"
-        group:
-            "{scatteritem}"
-        shell:
-            "gunzip -q {input}/*"
-
-
-    rule any2fasta:
-        input:
-            working_dir=rules.copy_MAGs.output,
-            flag=rules.unzip.output,
-        output:
-            directory("intermediate_dir/results_any2fasta/{scatteritem}"),
-        log:
-            "log/any2fasta/{scatteritem}.log",
-        conda:
-            "env/any2fasta.yaml"
-        script:
-            "scripts/any2fasta.py"
-else:
-    rule any2fasta:
-        input:
-            working_dir=rules.copy_MAGs.output[0],
-        output:
-            directory("intermediate_dir/results_any2fasta/{scatteritem}"),
-        log:
-            "log/any2fasta/{scatteritem}.log",
-        conda:
-            "env/any2fasta.yaml"
-        script:
-            "scripts/any2fasta.py"
+    conda:
+        "env/any2fasta.yaml"
+    script:
+        "scripts/any2fasta.py"
 
 
 rule prodigal:
     input:
         fasta_dir=rules.any2fasta.output,
     output:
-        directory("intermediate_dir/results_prodigal/{scatteritem}/"),
+        directory(f"{config['intermediate_dir']}/results_prodigal/{{scatteritem}}/"),
     log:
         "log/prodigal/{scatteritem}.log",
+    group:
+        "{scatteritem}"
     run:
         for i in input.fasta_dir:
             command_os = f"mkdir {output}"
@@ -104,21 +73,28 @@ rule prodigal:
 
 rule run_gunc:
     input:
-        db= rules.download_db.output[0].format(**config),
+        db=rules.download_db.output[0].format(**config),
         fasta_dir=rules.prodigal.output,
     output:
-        directory("intermediate_dir/results_gunc/{scatteritem}/"),
+        "results/gunc_tables/{scatteritem}.tsv",
     conda:
         "env/gunc.yaml"
     log:
         "log/gunc/run_{scatteritem}.log",
     benchmark:
         "log/benchmark/gunc/{scatteritem}.tsv"
+    group:
+        "{scatteritem}"
     threads: 8
+    params:
+        working_dir=f"{config['intermediate_dir']}/results_gunc/{{scatteritem}}",
     shell:
-        "mkdir {output} && gunc run --threads {threads} --db_file {input.db} --input_dir {input.fasta_dir}/ "
+        "mkdir -p {params.working_dir}/{wildcards.scatteritem}/ "
+        "&& gunc run --threads {threads} --db_file {input.db} --input_dir {input.fasta_dir}/ "
         "--file_suffix .faa --gene_calls "
-        "--out_dir {output} &> {log}"
+        "--out_dir {params.working_dir} &> {log} "
+        "&& mv {params.working_dir}/*.tsv {params.working_dir}/{wildcards.scatteritem}.tsv "
+        "&& cp {params.working_dir}/*.tsv {output}"
 
 
 rule concatenate_gunc:
@@ -134,19 +110,18 @@ rule run_busco:
     input:
         fasta_dir=rules.prodigal.output,
     output:
-        directory("intermediate_dir/results_busco/{scatteritem}/"),
+        "results/busco/{scatteritem}.tsv",
     conda:
         "env/busco.yaml"
     log:
         "log/busco/run_{scatteritem}.log",
     benchmark:
         "log/benchmark/busco/{scatteritem}.tsv"
+    group:
+        "{scatteritem}"
     params:
-        output_dir=".busco_temp/{scatteritem}",
-        busco_parameters=config["busco_parameters"],
-    threads: 8
-    # resources:
-    #    mem_mb=100000,
+        working_dir=f"{config['intermediate_dir']}/results_busco/{{scatteritem}}/",
+    threads: 4
     script:
         "scripts/busco.py"
 
