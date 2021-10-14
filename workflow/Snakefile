@@ -60,20 +60,19 @@ rule prodigal:
         "log/prodigal/{scatteritem}.log",
     group:
         "{scatteritem}"
-    run:
-        for i in input.fasta_dir:
-            command_os = f"mkdir {output}"
-            os.system(command_os)
-            glob_argument = f"{i}/*.fasta"
-            for path in glob.glob(glob_argument):
-                sample_name = "".join(path.split("/")[-1].split(".")[:-1])
-                shell(f"prodigal -q -p meta -i {path} -a {output}/{sample_name}.faa &> {log}")
+    params:
+        parameters= "-q -p meta"
+    conda:
+        "env/gunc.yaml"
+    script:
+        "scripts/run_prodigal.py"
+
 
 
 rule run_gunc:
     input:
         db=rules.download_db.output[0].format(**config),
-        fasta_dir=rules.prodigal.output,
+        fasta_dir=rules.prodigal.output[0],
     output:
         "results/gunc_tables/{scatteritem}.tsv",
     conda:
@@ -92,8 +91,7 @@ rule run_gunc:
         "&& gunc run --threads {threads} --db_file {input.db} --input_dir {input.fasta_dir}/ "
         "--file_suffix .faa --gene_calls "
         "--out_dir {params.working_dir} &> {log} "
-        "&& mv {params.working_dir}/*.tsv {params.working_dir}/{wildcards.scatteritem}.tsv "
-        "&& cp {params.working_dir}/*.tsv {output}"
+        "&& cp {params.working_dir}/*.tsv {output} &>> {log}"
 
 
 rule concatenate_gunc:
