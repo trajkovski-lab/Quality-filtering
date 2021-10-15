@@ -53,7 +53,7 @@ rule any2fasta:
 
 rule prodigal:
     input:
-        fasta_dir=rules.any2fasta.output,
+        fasta_dir=rules.any2fasta.output[0],
     output:
         directory(f"{config['intermediate_dir']}/results_prodigal/{{scatteritem}}/"),
     log:

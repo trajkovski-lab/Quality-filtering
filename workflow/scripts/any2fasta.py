@@ -20,4 +20,4 @@ for path in paths:
 
     else:
         # simply create smlink
-        os.symlink(path_command, f"{snakemake.output}/{sample_name}.fasta")
+        os.symlink(os.path.abspath(path_command), f"{snakemake.output}/{sample_name}.fasta")

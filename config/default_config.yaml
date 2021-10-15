@@ -1,5 +1,5 @@
 genomes: /Users/matija/uhgg_gff
-intermediate_dir: /tmp/intermediate_dir
+intermediate_dir: /scratch/intermediate_dir
 format1: .gff
 format2: .fna
 database_folder: ../resources/database/
