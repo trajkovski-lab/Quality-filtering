@@ -85,7 +85,7 @@ rule run_gunc:
         "{scatteritem}"
     threads: 8
     resources:
-        mem_mb=24000
+        mem_mb=24000,
         time_min= 5*60
     params:
         working_dir=f"{config['intermediate_dir']}/results_gunc/{{scatteritem}}",
