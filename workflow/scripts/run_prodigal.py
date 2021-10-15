@@ -32,20 +32,42 @@ sys.excepthook = handle_exception
 # Start of the scripts
 
 
-import glob
+from glob import glob
 import os
 import sys
 from snakemake.shell import shell
+from multiprocessing import Pool
+
+def run_prodigal(input_fasta):
+    # run prodigal on one sample
+    # stderr get raised and saved to log file
+    sample_name = os.path.splitext(os.path.basename(input_fasta))[0]
+
+    stdout=  shell(f"prodigal {snakemake.params.parameters} -i {input_fasta} -a {snakemake.output[0]}/{sample_name}.faa", read=True)
+
+    logging.info(f"Run prodigal on sample {sample_name}, Output:\n{stdout}")
 
 
-os.makedirs(snakemake.output[0])
+def run_multiple_prodigal(input_dir, out_dir, log, threads,extension='.fasta'):
+
+    # read input list
+    genomes_fastas = glob(os.path.join(input_dir, "*"+extension))
+    assert len(genomes_fastas)>0
+    os.makedirs(out_dir, exist_ok=True)
+
+    pool = Pool(threads)
+    pool.map( run_prodigal,genomes_fastas)
 
 
 
 
 
-for path in glob.glob( f"{snakemake.input.fasta_dir}/*.fasta"):
-    sample_name = os.path.splitext(os.path.basename(path))[0]
-    logging.info(f"Run prodigal on sample {sample_name}")
+if __name__ == "__main__":
 
-    shell(f"prodigal {snakemake.params.parameters} -i {path} -a {snakemake.output[0]}/{sample_name}.faa  ")
+
+    run_multiple_prodigal(
+        snakemake.input.fasta_dir,
+        snakemake.output[0],
+        snakemake.log[0],
+        int(snakemake.threads),
+    )
