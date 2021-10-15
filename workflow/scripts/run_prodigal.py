@@ -42,10 +42,10 @@ def run_prodigal(input_fasta):
     # run prodigal on one sample
     # stderr get raised and saved to log file
     sample_name = os.path.splitext(os.path.basename(input_fasta))[0]
+    logging.info(f"Run prodigal on sample {sample_name}")
+    shell(f"prodigal {snakemake.params.parameters} -i {input_fasta} -a {snakemake.output[0]}/{sample_name}.faa > /dev/null")
 
-    stdout=  shell(f"prodigal {snakemake.params.parameters} -i {input_fasta} -a {snakemake.output[0]}/{sample_name}.faa", read=True)
-
-    logging.info(f"Run prodigal on sample {sample_name}, Output:\n{stdout}")
+    
 
 
 def run_multiple_prodigal(input_dir, out_dir, log, threads,extension='.fasta'):
