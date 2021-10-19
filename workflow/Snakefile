@@ -5,8 +5,10 @@ import os
 
 configfile: f"{os.path.dirname(workflow.snakefile)}/../config/default_config.yaml"
 
-
-include: "functions.smk"
+if config['busco_parameters'] == "cluster_analysis":
+    pass
+else:
+    include: "functions.smk"
 
 
 rule all:
@@ -27,48 +29,31 @@ rule download_db:
         "mv {resources.tmpdir}/gunc_db_{wildcards.gunc_db_type}*.dmnd {output} 2>> {log}"
 
 
-rule make_lists:
+checkpoint make_lists:
     input:
         config["genomes"],
     output:
-        scatter.split("genome_list/{scatteritem}.txt"),
+        directory("genome_list/"),
     script:
         "scripts/make_lists.py"
 
 
-rule any2fasta:
-    input:
-        lists="genome_list/{scatteritem}.txt",
-    output:
-        directory(f"{config['intermediate_dir']}/results_any2fasta/{{scatteritem}}"),
-    log:
-        "log/any2fasta/{scatteritem}.log",
-    group:
-        "{scatteritem}"
-    conda:
-        "env/any2fasta.yaml"
-    script:
-        "scripts/any2fasta.py"
 
 
 rule prodigal:
     input:
-        fasta_dir=rules.any2fasta.output,
+        "genome_list/{counter}-{lineage}.txt",
     output:
-        directory(f"{config['intermediate_dir']}/results_prodigal/{{scatteritem}}/"),
+        directory(f"{config['intermediate_dir']}/results_prodigal/{{counter}}-{{lineage}}"),
     log:
-        "log/prodigal/{scatteritem}.log",
-    group:
-        "{scatteritem}"
-    run:
-        for i in input.fasta_dir:
-            command_os = f"mkdir {output}"
-            os.system(command_os)
-            glob_argument = f"{i}/*.fasta"
-            for path in glob.glob(glob_argument):
-                sample_name = "".join(path.split("/")[-1].split(".")[:-1])
-                command = f"prodigal -q -p meta -i {path} -a {output}/{sample_name}.faa &> {log}"
-                os.system(command)
+        "log/prodigal/{counter}-{lineage}.log",
+    params:
+        parameters= "-q -p meta"
+    threads: 4
+    conda:
+        "env/any2fasta.yaml"
+    script:
+        "scripts/prodigal.py"
 
 
 rule run_gunc:
@@ -76,30 +61,33 @@ rule run_gunc:
         db=rules.download_db.output[0].format(**config),
         fasta_dir=rules.prodigal.output,
     output:
-        "results/gunc_tables/{scatteritem}.tsv",
+        "results/gunc_tables/{counter}-{lineage}.tsv",
     conda:
         "env/gunc.yaml"
     log:
-        "log/gunc/run_{scatteritem}.log",
+        "log/gunc/run_{counter}-{lineage}.log",
     benchmark:
-        "log/benchmark/gunc/{scatteritem}.tsv"
-    group:
-        "{scatteritem}"
+        "log/benchmark/gunc/{counter}-{lineage}.tsv"
     threads: 8
     params:
-        working_dir=f"{config['intermediate_dir']}/results_gunc/{{scatteritem}}",
+        working_dir=f"{config['intermediate_dir']}/results_gunc/{{counter}}-{{lineage}}",
     shell:
-        "mkdir -p {params.working_dir}/{wildcards.scatteritem}/ "
+        "mkdir -p {params.working_dir}/{wildcards.counter}/ "
         "&& gunc run --threads {threads} --db_file {input.db} --input_dir {input.fasta_dir}/ "
         "--file_suffix .faa --gene_calls "
         "--out_dir {params.working_dir} &> {log} "
-        "&& mv {params.working_dir}/*.tsv {params.working_dir}/{wildcards.scatteritem}.tsv "
+        "&& mv {params.working_dir}/*.tsv {params.working_dir}/{wildcards.counter}.tsv "
         "&& cp {params.working_dir}/*.tsv {output}"
+
+def concatinate_gunc_input(wildcards):
+    list_folder = checkpoints.make_lists.get(**wildcards).output[0]
+    all_lists = glob_wildcards(os.path.join(list_folder, "{list}.txt")).list
+    return expand("results/gunc_tables/{list}.tsv", list = all_lists)
 
 
 rule concatenate_gunc:
     input:
-        gather.split(rules.run_gunc.output),
+        concatinate_gunc_input
     output:
         "results/GUNC_output.tsv",
     script:
@@ -110,25 +98,28 @@ rule run_busco:
     input:
         fasta_dir=rules.prodigal.output,
     output:
-        "results/busco/{scatteritem}.tsv",
+        "results/busco_tables/{counter}-{lineage}.tsv",
     conda:
         "env/busco.yaml"
     log:
-        "log/busco/run_{scatteritem}.log",
+        "log/busco/run_{counter}-{lineage}.log",
     benchmark:
-        "log/benchmark/busco/{scatteritem}.tsv"
-    group:
-        "{scatteritem}"
+        "log/benchmark/busco/{counter}-{lineage}.tsv"
     params:
-        working_dir=f"{config['intermediate_dir']}/results_busco/{{scatteritem}}/",
+        working_dir=f"{config['intermediate_dir']}/results_busco/{{counter}}-{{lineage}}/",
     threads: 4
     script:
         "scripts/busco.py"
 
+def concatinate_busco_input(wildcards):
+    list_folder = checkpoints.make_lists.get(**wildcards).output[0]
+    all_lists = glob_wildcards(os.path.join(list_folder, "{list}.txt")).list
+    return expand("results/busco_tables/{list}.tsv", list = all_lists)
+
 
 rule concatenate_busco:
     input:
-        gather.split(rules.run_busco.output),
+        concatinate_busco_input
     output:
         "results/BUSCO_output.tsv",
     log:
