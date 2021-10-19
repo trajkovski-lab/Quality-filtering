@@ -1,5 +1,7 @@
 genomes: /Users/matija/uhgg_gff
 intermediate_dir: intermediate_dir
+temporary_dir: /tmp
+directory_faa: faa_files #directory where faa files should be stored for after analysis
 format1: .gff.gz
 format2: .fna.gz
 database_folder: ../resources/database/

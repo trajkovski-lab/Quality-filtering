@@ -49,7 +49,7 @@ rule prodigal:
         "log/prodigal/{counter}-{lineage}.log",
     params:
         parameters= "-q -p meta"
-    threads: 4
+    #threads: 4
     conda:
         "env/any2fasta.yaml"
     script:

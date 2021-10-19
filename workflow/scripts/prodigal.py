@@ -38,7 +38,7 @@ def run_prodigal(input_fasta):
     # stderr get raised and saved to log file
     sample_name = os.path.splitext(os.path.basename(input_fasta))[0]
     logging.info(f"Run prodigal on sample {sample_name}")
-    shell(f"prodigal {snakemake.params.parameters} -i {input_fasta} -a {snakemake.output}/{sample_name}.faa > /dev/null")
+    shell(f"prodigal {snakemake.params.parameters} -i {input_fasta} -a {snakemake.config['directory_faa']}/{sample_name}.faa > /dev/null")
 
 
 
@@ -53,23 +53,30 @@ def run_multiple_prodigal(input_dir, out_dir, log, threads,extension='.fasta'):
     pool = Pool(int(threads))
     pool.map( run_prodigal,genomes_fastas)
 
+def symlink_relative(input_dir, output_dir, sample_name):
+    input_dir_rel = os.path.relpath(input_dir, output_dir)
+    os.symlink(os.path.join(input_dir_rel, sample_name), os.path.join(output_dir, sample_name))
+
 
 for input in snakemake.input:
     lineage = "".join("".join("".join(input.split("/")[-1]).split(".")[0]).split("_")[4:])
     with open(input,'r') as path_file:
-        os.system(f"mkdir -p /scratch/{snakemake.config['intermediate_dir']}/results_any2fasta/{snakemake.wildcards.counter}-{snakemake.wildcards.lineage}")
+        os.system(f"mkdir -p {snakemake.config['temporary_dir']}/{snakemake.config['intermediate_dir']}/results_any2fasta/{snakemake.wildcards.counter}-{snakemake.wildcards.lineage}")
         paths = path_file.readlines()
         for path in paths:
             path_command = path.strip("\n")
             unzipped_sample = "".join(path_command.split("/")[-1]).rstrip(".gz")
             sample_name = ".".join(unzipped_sample.split(".")[:-1])
             if "gff" in unzipped_sample or ".gz" in path_command:
-                shell(f"any2fasta {path_command} > /scratch/{snakemake.config['intermediate_dir']}/results_any2fasta/{snakemake.wildcards.counter}-{snakemake.wildcards.lineage}/{sample_name}.fasta")
+                shell(f"any2fasta {path_command} > {snakemake.config['temporary_dir']}/{snakemake.config['intermediate_dir']}/results_any2fasta/{snakemake.wildcards.counter}-{snakemake.wildcards.lineage}/{sample_name}.fasta")
             else:
-                dst = f"/scratch/{snakemake.config['intermediate_dir']}/results_any2fasta/{snakemake.wildcards.counter}-{snakemake.wildcards.lineage}/{sample_name}.fasta"
+                dst = f"{snakemake.config['temporary_dir']}/{snakemake.config['intermediate_dir']}/results_any2fasta/{snakemake.wildcards.counter}-{snakemake.wildcards.lineage}/{sample_name}.fasta"
                 shell(f"ln -s {path_command} {dst}")
             os.system(f"mkdir -p {snakemake.output}")
-            run_prodigal(f"/scratch/{snakemake.config['intermediate_dir']}/results_any2fasta/{snakemake.wildcards.counter}-{snakemake.wildcards.lineage}/{sample_name}.fasta")
+            os.makedirs(snakemake.config.get('directory_faa', ''), exist_ok=True)
+            run_prodigal(f"{snakemake.config['temporary_dir']}/{snakemake.config['intermediate_dir']}/results_any2fasta/{snakemake.wildcards.counter}-{snakemake.wildcards.lineage}/{sample_name}.fasta")
+            sample_name_faa = sample_name + '.faa'
+            symlink_relative(snakemake.config['directory_faa'], snakemake.output[0], sample_name_faa)
 
 
 '''
