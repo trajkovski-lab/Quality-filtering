@@ -140,6 +140,7 @@ for sample in all_genomes_in_dir:
         ][0]
         dictionary_of_lineages[lineage_of_sample].append(sample)
     except:
+        logger.info(f"Cannot find lineage information for sample {sample_name}! Proceeding without it ...")
         pass
 counter = 0
 for key in list(dictionary_of_lineages.keys()):
