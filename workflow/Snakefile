@@ -55,7 +55,7 @@ rule prodigal:
         parameters="-q -p meta",
     # threads: 4
     conda:
-        "env/any2fasta.yaml"
+        "env/prodigal.yaml"
     script:
         "scripts/prodigal.py"
 
