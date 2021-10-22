@@ -1,8 +1,11 @@
-genomes: /Users/matija/uhgg_gff
-intermediate_dir: /scratch/intermediate_dir
-format1: .gff
-format2: .fna
+genomes: ../../../uhgg_gff
+temporary_dir: /tmp
+directory_faa: faa_files #directory where faa files should be stored for after analysis
+format1: .gff.gz
+format2: .fna.gz
 database_folder: ../resources/database/
 gunc_db_type: gtdb #progenomes or gtdb
-busco_parameters: --auto-lineage-prok # or specific lineage with -l flag
+busco_parameters: cluster_analysis # specific lineage with -l flag or "cluster_analysis" or --auto-lineage-prok
 batch_size: 50
+all_genomes: /Users/matija/HumGut/HumGut_all/All_genomes.tsv #table where cluster is specified for every genome in genomes/ dir
+busco_output: /Users/matija/HumGut/HumGut_all/BUSCO_output.tsv #output for BUSCO representative run
