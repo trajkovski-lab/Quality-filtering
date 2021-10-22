@@ -9,7 +9,6 @@ configfile: f"{os.path.dirname(workflow.snakefile)}/../config/default_config.yam
 if config["busco_parameters"] == "cluster_analysis":
     pass
 else:
-
     include: "functions.smk"
 
 
@@ -73,10 +72,12 @@ rule run_gunc:
     benchmark:
         "quality_filtering/log/benchmark/gunc/{counter}-{lineage}.tsv"
     threads: 8
+    resources:
+        mem_mb=24000
     params:
-        working_dir=f"quality_filtering/intermediate_results/_gunc/{{counter}}-{{lineage}}",
+        working_dir=f"quality_filtering/intermediate_results/results_gunc/{{counter}}-{{lineage}}",
     shell:
-        "mkdir -p {params.working_dir}/{wildcards.counter}/ "
+        "mkdir -p {params.working_dir}/ "
         "&& gunc run --threads {threads} --db_file {input.db} --input_dir {input.fasta_dir}/ "
         "--file_suffix .faa --gene_calls "
         "--out_dir {params.working_dir} &> {log} "
