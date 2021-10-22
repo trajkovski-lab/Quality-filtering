@@ -48,16 +48,17 @@ batch_size = snakemake.config["batch_size"]
 N_batches = len(all_genomes_in_dir) // batch_size + 1
 os.makedirs("quality_filtering/intermediate_results/genome_list/", exist_ok=True)
 # if no other table is specified in default_config
-if snakemake.config["busco_output"] == "":
+if snakemake.config["busco_parameters"] != "cluster_analysis":
     logger.info(
         "No previous BUSCO output found! Proceeding with creating random batches . . ."
     )
     counter = 0
-    generator = chunks(all_genomes, batch_size)
+    generator = chunks(all_genomes_in_dir, batch_size)
     for batch in generator:
+        key = snakemake.config['busco_parameters']
         counter += 1
         with open(
-            f"quality_filtering/intermediate_results/genome_list/batch_number_{counter}.txt",
+            f"quality_filtering/intermediate_results/genome_list/batch_number_{counter}{key}.txt",
             "w",
         ) as f:
             f.write("\n".join(batch))
@@ -105,52 +106,52 @@ else:
                     f.write("\n".join(list_of_samples) + "\n")
         except:
             pass
-logger.info(
-    "Finished creating .txt files based on table with all genomes! Proceeding with loading input files . . ."
-)
-# Read those .txt files, create dictionary and that dataframe where columns = lineages and rows = samples
-dictionary_of_lineages = {}
-# glob_argument = "../../../HumGut/HumGut_all/by_cluster/*.txt"
-glob_argument = "quality_filtering/intermediate_results/by_cluster/*.txt"
-dictionary = {}
-for path in glob.glob(glob_argument):
-    list_of_genomes = []
-    lineage = "_".join("".join(path.rstrip(".txt").split("/")[-1]).split("_")[1:])
-    with open(path, "r") as path_file:
-        genomes = path_file.readlines()
-        for genome in genomes:
-            genome_stripped = genome.strip("\n")
-            list_of_genomes.append(genome_stripped)
-    dictionary[lineage] = list_of_genomes
-df_from_dict = pd.DataFrame.from_dict(dictionary, orient="index").T
-list_of_lineages = list(df_from_dict)
-for lineage in list_of_lineages:
-    dictionary_of_lineages[lineage] = []
-# go through every sample in config['genomes'] dir and match the name with name in df_from_dict.
-# If there is a match, get name of the column (lineage)
-for sample in all_genomes_in_dir:
-    sample_name = "_".join(
-        "".join("".join(sample.rstrip(".gz").split("/")[-1]).split(".")[:-1]).split(
-            "_"
-        )[:2]
-    ).strip("\n")
-    try:
-        lineage_of_sample = df_from_dict.columns[
-            df_from_dict.isin([sample_name]).any()
-        ][0]
-        dictionary_of_lineages[lineage_of_sample].append(sample)
-    except:
-        logger.info(f"Cannot find lineage information for sample {sample_name}! Proceeding without it ...")
-        pass
-counter = 0
-for key in list(dictionary_of_lineages.keys()):
-    generator = chunks(dictionary_of_lineages[key], batch_size)
-    for batch in generator:
-        counter += 1
-        # os.system(f"touch genome_list/batch_number_{counter}_lineage_{key}.txt")
-        with open(
-            f"quality_filtering/intermediate_results/genome_list/batch_number_{counter}-{key}.txt",
-            "w",
-        ) as f:
-            f.write("\n".join(batch))
-logger.info(f"Finished creating batches!")
+    logger.info(
+        "Finished creating .txt files based on table with all genomes! Proceeding with loading input files . . ."
+    )
+    # Read those .txt files, create dictionary and that dataframe where columns = lineages and rows = samples
+    dictionary_of_lineages = {}
+    # glob_argument = "../../../HumGut/HumGut_all/by_cluster/*.txt"
+    glob_argument = "quality_filtering/intermediate_results/by_cluster/*.txt"
+    dictionary = {}
+    for path in glob.glob(glob_argument):
+        list_of_genomes = []
+        lineage = "_".join("".join(path.rstrip(".txt").split("/")[-1]).split("_")[1:])
+        with open(path, "r") as path_file:
+            genomes = path_file.readlines()
+            for genome in genomes:
+                genome_stripped = genome.strip("\n")
+                list_of_genomes.append(genome_stripped)
+        dictionary[lineage] = list_of_genomes
+    df_from_dict = pd.DataFrame.from_dict(dictionary, orient="index").T
+    list_of_lineages = list(df_from_dict)
+    for lineage in list_of_lineages:
+        dictionary_of_lineages[lineage] = []
+    # go through every sample in config['genomes'] dir and match the name with name in df_from_dict.
+    # If there is a match, get name of the column (lineage)
+    for sample in all_genomes_in_dir:
+        sample_name = "_".join(
+            ".".join("".join(sample.rstrip(".gz").split("/")[-1]).split(".")[:-1]).split(
+                "_"
+            )[:2]
+        ).strip("\n")
+        try:
+            lineage_of_sample = df_from_dict.columns[
+                df_from_dict.isin([sample_name]).any()
+            ][0]
+            dictionary_of_lineages[lineage_of_sample].append(sample)
+        except:
+            logger.info(f"Cannot find lineage information for sample {sample_name}! Proceeding without it ...")
+            pass
+    counter = 0
+    for key in list(dictionary_of_lineages.keys()):
+        generator = chunks(dictionary_of_lineages[key], batch_size)
+        for batch in generator:
+            counter += 1
+            # os.system(f"touch genome_list/batch_number_{counter}_lineage_{key}.txt")
+            with open(
+                f"quality_filtering/intermediate_results/genome_list/batch_number_{counter}-{key}.txt",
+                "w",
+            ) as f:
+                f.write("\n".join(batch))
+    logger.info(f"Finished creating batches!")

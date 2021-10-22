@@ -55,7 +55,7 @@ for i in snakemake.input.fasta_dir:
             )
     glob_result = f"{snakemake.params.working_dir}/*/short_summary.specific.*.*.txt"
     for path_result in glob.glob(glob_result):
-        sample_name = path_result.split("/")[-1].split(".")[-2]
+        sample_name = ".".join(path_result.split("/")[-1].split(".")[-2])
         lineage = path_result.split("/")[-1].split(".")[-3]
         with open(path_result, "r") as f:
             lines = f.readlines()
