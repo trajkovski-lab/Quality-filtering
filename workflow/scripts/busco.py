@@ -36,21 +36,22 @@ sys.excepthook = handle_exception
 for i in snakemake.input.fasta_dir:
     temporary_df = pd.DataFrame()
     glob_argument = f"{i}/*.faa"
+    db_path = os.path.join(snakemake.config["database_folder"]
     for path in glob.glob(glob_argument):
         sample_name = ".".join(path.split("/")[-1].split(".")[:-1])
         if snakemake.config["busco_parameters"] == "cluster_analysis":
             lineage = "".join("".join(path.split("/")[-2]).split("-")[-1])
             shell(
-                f"busco -i {path} -l {lineage} -m protein -o {sample_name} --download_path quality_filtering/intermediate_results --out_path {snakemake.params.working_dir} -c {snakemake.threads} &> {snakemake.log}"
+                f"busco -i {path} -l {lineage} -m protein -o {sample_name} --download_path {db_path} --out_path {snakemake.params.working_dir} -c {snakemake.threads} &> {snakemake.log}"
             )
         elif "auto-lineage-prok" in snakemake.config["busco_parameters"]:
             shell(
-                f"busco -i {path} --auto-lineage-prok -m protein -o {sample_name} --download_path quality_filtering/intermediate_results --out_path {snakemake.params.working_dir} -c {snakemake.threads} &> {snakemake.log}"
+                f"busco -i {path} --auto-lineage-prok -m protein -o {sample_name} --download_path {db_path} --out_path {snakemake.params.working_dir} -c {snakemake.threads} &> {snakemake.log}"
             )
         else:
             lineage = snakemake.config["busco_parameters"]
             shell(
-                f"busco -i {path} -l {lineage} -m protein -o {sample_name} --download_path quality_filtering/intermediate_results --out_path {snakemake.params.working_dir} -c {snakemake.threads} &> {snakemake.log}"
+                f"busco -i {path} -l {lineage} -m protein -o {sample_name} --download_path {db_path} --out_path {snakemake.params.working_dir} -c {snakemake.threads} &> {snakemake.log}"
             )
     glob_result = f"{snakemake.params.working_dir}/*/short_summary.specific.*.*.txt"
     for path_result in glob.glob(glob_result):
