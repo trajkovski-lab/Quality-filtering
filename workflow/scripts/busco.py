@@ -36,7 +36,7 @@ sys.excepthook = handle_exception
 for i in snakemake.input.fasta_dir:
     temporary_df = pd.DataFrame()
     glob_argument = f"{i}/*.faa"
-    db_path = os.path.join(snakemake.config["database_folder"]
+    db_path = snakemake.config["database_folder"]
     for path in glob.glob(glob_argument):
         sample_name = ".".join(path.split("/")[-1].split(".")[:-1])
         if snakemake.config["busco_parameters"] == "cluster_analysis":
