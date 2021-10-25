@@ -38,7 +38,7 @@ for i in snakemake.input.fasta_dir:
     glob_argument = f"{i}/*.faa"
     db_path = snakemake.config["database_folder"]
     for path in glob.glob(glob_argument):
-        sample_name = ".".join(path.split("/")[-1].split(".")[:-1])
+        sample_name = "".join(path.split("/")[-1].split(".")[:-1])
         if snakemake.config["busco_parameters"] == "cluster_analysis":
             lineage = "".join("".join(path.split("/")[-2]).split("-")[-1])
             shell(
