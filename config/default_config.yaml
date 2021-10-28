@@ -1,4 +1,4 @@
-genomes: ../../../uhgg_gff
+genomes: ../../../uhgg
 temporary_dir: /tmp
 directory_faa: faa_files #directory where faa files should be stored for after analysis
 format1: .gff.gz
@@ -9,3 +9,4 @@ busco_parameters: cluster_analysis # specific lineage with -l flag or "cluster_a
 batch_size: 50
 all_genomes: /Users/matija/HumGut/HumGut_all/All_genomes.tsv #table where cluster is specified for every genome in genomes/ dir
 busco_output: /Users/matija/HumGut/HumGut_all/BUSCO_output.tsv #output for BUSCO representative run
+cluster_info: cluster95 #Which cluster was used to create previous busco output

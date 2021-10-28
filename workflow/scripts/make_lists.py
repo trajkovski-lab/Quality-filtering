@@ -90,10 +90,11 @@ else:
     BUSCO_output["genome_file_base"] = list_of_names_BUSCO_output
     # merge to create table that links cluster information with every genome in all_genomes
     merged = BUSCO_output.merge(all_genomes, on="genome_file_base")
-    big_table = all_genomes.merge(merged, on="cluster975", how="left")
+    cluster_info = snakemake.config['cluster_info']
+    big_table = all_genomes.merge(merged, on=cluster_info, how="left")
     # iterate over every cluster and create .txt files where one lineage = one .txt file
-    for i in range(1, len(big_table["cluster975"].unique())):
-        df = big_table.query("cluster975 == @i")
+    for i in range(1, len(big_table[cluster_info].unique())):
+        df = big_table.query("cluster_info == @i")
         list_of_samples = []
         for sample_name in df["genome_file_base_x"]:
             list_of_samples.append(sample_name)
