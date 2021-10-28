@@ -137,7 +137,7 @@ else:
     # If there is a match, get name of the column (lineage)
     for sample in all_genomes_in_dir:
         sample_name = "_".join(
-            ".".join("".join(sample.rstrip(".gz").split("/")[-1]).split(".")[:-1]).split(
+            "".join("".join(sample.rstrip(".gz").split("/")[-1]).split(".")[:-1]).split(
                 "_"
             )[:2]
         ).strip("\n")
