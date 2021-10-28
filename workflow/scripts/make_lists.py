@@ -3,6 +3,10 @@ import pandas as pd
 from snakemake.shell import shell
 import os
 import logging, traceback
+try:
+    from tqdm import tqdm
+except ImportError:
+    tqdm = []
 
 logging.basicConfig(
     filename=snakemake.log[0],
@@ -93,8 +97,9 @@ else:
     cluster_info = snakemake.config['cluster_info']
     big_table = all_genomes.merge(merged, on=cluster_info, how="left")
     # iterate over every cluster and create .txt files where one lineage = one .txt file
-    for i in range(1, len(big_table[cluster_info].unique())):
-        df = big_table.query("cluster_info == @i")
+    # for i in range(1, len(big_table[cluster_info].unique())):
+    #     df = big_table.query("@cluster_info == @i")
+    for i, (_ , df) in tqdm(enumerate(big_table.groupby(cluster_info))):
         list_of_samples = []
         for sample_name in df["genome_file_base_x"]:
             list_of_samples.append(sample_name)
