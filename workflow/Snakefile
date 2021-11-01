@@ -37,6 +37,10 @@ checkpoint make_lists:
         directory("quality_filtering/intermediate_results/genome_list/"),
     log:
         "quality_filtering/log/make_lists.log"
+    resources:
+        mem_mb= 24 *1000,
+        time_min= 10 * 60 
+    threads: 1
     script:
         "scripts/make_lists.py"
 
