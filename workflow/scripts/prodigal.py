@@ -87,8 +87,10 @@ for input in snakemake.input:
                 logger.info(
                     f"Sample {sample_name} is in fasta format! Proceeding with creating symlink. . ."
                 )
-                dst = f"{snakemake.config['temporary_dir']}/intermediate_results/results_any2fasta/{snakemake.wildcards.counter}-{snakemake.wildcards.lineage}/{sample_name}.fasta"
-                shell(f"ln -s {path_command} {dst}")
+                dst = f"{snakemake.config['temporary_dir']}/intermediate_results/results_any2fasta/{snakemake.wildcards.counter}-{snakemake.wildcards.lineage}/"
+                #shell(f"ln -s {path_command} {dst}")
+                sample_name_fasta = sample_name + ".fasta"
+                symlink_relative(path_command, dst, sample_name_fasta)
             os.system(f"mkdir -p {snakemake.output}")
             os.makedirs(
                 f"quality_filtering/{snakemake.config.get('directory_faa', '')}",
