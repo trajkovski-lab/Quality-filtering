@@ -38,8 +38,8 @@ checkpoint make_lists:
     log:
         "quality_filtering/log/make_lists.log"
     resources:
-        mem_mb= 24 *1000,
-        time_min= 10 * 60 
+        mem_mb= 10 *1000,
+        time_min= 24 * 60
     threads: 1
     script:
         "scripts/make_lists.py"
