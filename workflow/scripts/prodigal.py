@@ -35,7 +35,7 @@ sys.excepthook = handle_exception
 
 
 try:
-    import tqdm
+    from tqdm import tqdm
 except ImportError:
     tqdm= list
 
