@@ -109,11 +109,13 @@ from multiprocessing import Pool
 
 
 def run_prodigal(input_fasta,out_dir=directory_faa, parameters=snakemake.params.parameters ):
+    """This rule has only one input argument othersise the multithreding becomes a bit more complicated
+    """
     # run prodigal on one sample
     # stderr get raised and saved to log file
     sample_name = os.path.splitext(os.path.basename(input_fasta))[0]
     logging.info(f"Run prodigal on sample {sample_name}")
-    
+
     shell(f"prodigal {parameters} -i {input_fasta} -a {out_dir}/{sample_name}.faa > /dev/null")
 
 
