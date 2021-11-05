@@ -66,9 +66,10 @@ def splitext_ignore_gz(path):
 intermediate_fasta_dir = f"{snakemake.config['temporary_dir']}/intermediate_results/fasta/{snakemake.wildcards.counter}-{snakemake.wildcards.lineage}"
 os.makedirs(intermediate_fasta_dir)
 
-# create faa dir
-directory_faa = snakemake.config.get('directory_faa', 'quality_filtering/faa_files')
-os.makedirs(directory_faa,exist_ok=True)
+# create directories for output
+prodigal_output = snakemake.config.get('directory_faa', 'quality_filtering/faa_files')
+for subfolders in ["faa","fna","tsv"]:
+    os.makedirs(f"{prodigal_output}/{subfolders}",exist_ok=True)
 
 
 
@@ -77,7 +78,7 @@ os.makedirs(directory_faa,exist_ok=True)
 with open(snakemake.input[0], "r") as path_file:
     paths= path_file.read().split()
 
-
+sample_names=[]
 
 for file in tqdm(paths):
 
@@ -85,6 +86,7 @@ for file in tqdm(paths):
     filename, extension= splitext_ignore_gz(file)
     sample_name = os.path.basename(filename)
 
+    sample_names.append(sample_name)
 
     if (extension==".gff") or file.endswith(".gz"):
         logger.info(
@@ -108,7 +110,7 @@ for file in tqdm(paths):
 from multiprocessing import Pool
 
 
-def run_prodigal(input_fasta,out_dir=directory_faa, parameters=snakemake.params.parameters ):
+def run_prodigal(input_fasta, parameters=snakemake.params.parameters ):
     """This rule has only one input argument othersise the multithreding becomes a bit more complicated
     """
     # run prodigal on one sample
@@ -116,7 +118,7 @@ def run_prodigal(input_fasta,out_dir=directory_faa, parameters=snakemake.params.
     sample_name = os.path.splitext(os.path.basename(input_fasta))[0]
     logging.info(f"Run prodigal on sample {sample_name}")
 
-    shell(f"prodigal {parameters} -i {input_fasta} -a {out_dir}/{sample_name}.faa > /dev/null")
+    shell(f"prodigal {parameters} -i {input_fasta} -a {out_dir}/faa/{sample_name}.faa -s {prodigal_output}/tsv/{sample_name}.tsv -d {prodigal_output}/fna/{sample_name}.fna > /dev/null")
 
 
 
@@ -132,3 +134,14 @@ def run_multiple_prodigal(input_dir, threads=snakemake.threads, extension=".fast
 
 
 run_multiple_prodigal(intermediate_fasta_dir)
+
+
+
+### Create symlinks for faa file
+
+# get input_dir relative from output dir to create a relative symlink
+input_dir_rel = os.path.relpath(f"{prodigal_output}/faa/", snakemake.output[0])
+for sample_name in sample_names:
+
+    os.path.symlink(f"{input_dir_rel}/{sample_name}.faa",
+                    f"{snakemake.output[0]}/{sample_name}.faa" )
