@@ -43,11 +43,19 @@ def chunks(lst, n):
 
 
 # get list of all genomes in directory specified in default_config
-argument1 = f"{snakemake.config['genomes']}/*{snakemake.config['format1']}"
-argument2 = f"{snakemake.config['genomes']}/*{snakemake.config['format2']}"
-glob_argument1 = set(glob.glob(argument1))
-glob_argument2 = set(glob.glob(argument2))
-all_genomes_in_dir = list(glob_argument1.union(glob_argument2))
+if snakemake.config['input_text_file'] == "":
+    argument1 = f"{snakemake.config['genomes']}/*{snakemake.config['format1']}"
+    argument2 = f"{snakemake.config['genomes']}/*{snakemake.config['format2']}"
+    glob_argument1 = set(glob.glob(argument1))
+    glob_argument2 = set(glob.glob(argument2))
+    all_genomes_in_dir = list(glob_argument1.union(glob_argument2))
+else:
+    all_genomes_in_dir = []
+    with open(snakemake.config['input_text_file'],'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            path = line.strip("\n")
+            all_genomes_in_dir.append(path)
 batch_size = snakemake.config["batch_size"]
 N_batches = len(all_genomes_in_dir) // batch_size + 1
 os.makedirs("quality_filtering/intermediate_results/genome_list/", exist_ok=True)

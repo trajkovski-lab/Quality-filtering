@@ -1,16 +1,10 @@
 from glob import glob
-#from snakemake.shell import shell
 import os, sys
 import logging, traceback
-
+from itertools import repeat
+from snakemake.shell import shell
 import subprocess
-
-logging.basicConfig(
-    filename=snakemake.log[0],
-    level=logging.INFO,
-    format="%(asctime)s %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+import collections
 
 logging.captureWarnings(True)
 
@@ -39,17 +33,17 @@ try:
 except ImportError:
     tqdm= list
 
-    logger.warning("optional package tqdm is not installed")
+    logging.warning("optional package tqdm is not installed")
 
 
 
 def shell(cmd):
     """ My shell command that reports error to the logger
     """
-    sp= subprocess.run(command,shell=True,capture_output=True,text=True)
+    sp= subprocess.run(cmd,shell=True,capture_output=True,text=True)
 
-    if sp.returncode!=0:
-        raise sp.CalledProcessError(sp.retcode, cmd,stderr=sp.stderr,stdout=sp.sdtout)
+    #if sp.returncode!=0:
+    #    raise sp.CalledProcessError(sp.retcode, cmd,stderr=sp.stderr,stdout=sp.sdtout)
 
 
 def splitext_ignore_gz(path):
@@ -62,47 +56,34 @@ def splitext_ignore_gz(path):
 
 
 
-# create fasta dir
-intermediate_fasta_dir = f"{snakemake.config['temporary_dir']}/intermediate_results/fasta/{snakemake.wildcards.counter}-{snakemake.wildcards.lineage}"
-os.makedirs(intermediate_fasta_dir)
 
-# create directories for output
-prodigal_output = snakemake.config.get('directory_faa', 'quality_filtering/faa_files')
-for subfolders in ["faa","fna","tsv"]:
-    os.makedirs(f"{prodigal_output}/{subfolders}",exist_ok=True)
-
-
-
-
+def any2fasta(path_list, intermediate_fasta_dir):
+    global sample_names
 #read paths from input file
-with open(snakemake.input[0], "r") as path_file:
-    paths= path_file.read().split()
+    with open(path_list, "r") as path_file:
+        paths= path_file.read().split()
 
-sample_names=[]
+    sample_names=[]
 
-for file in tqdm(paths):
+    for file in tqdm(paths):
+        filename, extension= splitext_ignore_gz(file)
+        sample_name = os.path.basename(filename)
 
+        sample_names.append(sample_name)
 
-    filename, extension= splitext_ignore_gz(file)
-    sample_name = os.path.basename(filename)
+        if (extension==".gff") or file.endswith(".gz"):
+            logging.info(
+                f"Sample {sample_name} is eather zipped or not in fasta format! Proceeding with any2fasta. . ."
+            )
+            shell(
+                f"any2fasta {file} > {intermediate_fasta_dir}/{sample_name}.fasta"
+            )
+        else:
+            logging.info(
+                f"Sample {sample_name} is in fasta format! Proceeding with creating symlink. . ."
+            )
 
-    sample_names.append(sample_name)
-
-    if (extension==".gff") or file.endswith(".gz"):
-        logger.info(
-            f"Sample {sample_name} is eather zipped or not in fasta format! Proceeding with any2fasta. . ."
-        )
-
-        shell(
-            f"any2fasta {file} > {intermediate_fasta_dir}/{sample_name}.fasta"
-        )
-    else:
-        logger.info(
-            f"Sample {sample_name} is in fasta format! Proceeding with creating symlink. . ."
-        )
-
-        os.path.symlink(os.path.abspath(file), f"{intermediate_fasta_dir}/{sample_name}.fasta" )
-
+            os.path.symlink(os.path.abspath(file), f"{intermediate_fasta_dir}/{sample_name}.fasta" )
 
 ### Run prodigal
 
@@ -110,19 +91,20 @@ for file in tqdm(paths):
 from multiprocessing import Pool
 
 
-def run_prodigal(input_fasta, parameters=snakemake.params.parameters ):
+def run_prodigal(input_fasta, parameters, out_dir, prodigal_output, dictionary):#snakemake.params.parameters ):
     """This rule has only one input argument othersise the multithreding becomes a bit more complicated
     """
     # run prodigal on one sample
     # stderr get raised and saved to log file
     sample_name = os.path.splitext(os.path.basename(input_fasta))[0]
+    path = dictionary[sample_name]
+    os.makedirs(f"{prodigal_output}/faa/{path}", exist_ok=True)
+    os.makedirs(f"{prodigal_output}/fna/{path}", exist_ok=True)
     logging.info(f"Run prodigal on sample {sample_name}")
-
-    shell(f"prodigal {parameters} -i {input_fasta} -a {out_dir}/faa/{sample_name}.faa -s {prodigal_output}/tsv/{sample_name}.tsv -d {prodigal_output}/fna/{sample_name}.fna > /dev/null")
-
+    shell(f"prodigal {parameters} -i {input_fasta} -a {prodigal_output}/faa/{path}/{sample_name}.faa  -d {prodigal_output}/fna/{path}/{sample_name}.fna > /dev/null")
 
 
-def run_multiple_prodigal(input_dir, threads=snakemake.threads, extension=".fasta"):
+def run_multiple_prodigal(input_dir, threads, extension=".fasta"):
 
     # read input list
     genomes_fastas = glob(os.path.join(input_dir, "*" + extension))
@@ -130,18 +112,46 @@ def run_multiple_prodigal(input_dir, threads=snakemake.threads, extension=".fast
 
 
     pool = Pool(int(threads))
-    pool.map(run_prodigal, genomes_fastas)
+    pool.starmap(run_prodigal, zip(genomes_fastas, repeat(snakemake.params), repeat(out_dir), repeat(prodigal_output), repeat(dictionary)))
+
+if __name__ == "__main__":
+
+    logging.basicConfig(
+        filename=snakemake.log[0],
+        level=logging.INFO,
+        format="%(asctime)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    out_dir = "quality_filtering/"
+    # create fasta dir
+    intermediate_fasta_dir = f"{snakemake.config['temporary_dir']}/intermediate_results/fasta/{snakemake.wildcards.counter}-{snakemake.wildcards.lineage}"
+    os.makedirs(intermediate_fasta_dir, exist_ok=True)
+
+    prodigal_output = snakemake.config.get('directory_faa', 'quality_filtering/faa_files')
+    for subfolders in ["faa","fna"]:
+        os.makedirs(f"{prodigal_output}/{subfolders}",exist_ok=True)
+
+    dictionary = collections.defaultdict()
+    with open(snakemake.config['input_text_file'],'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            full_sample = "".join(line.split('/')[-1])
+            sample = ".".join(full_sample.strip(".gz").split(".")[:-1]).strip(".fasta")
+            path_for_faa = "/".join(line.split("/")[-4:-1]).strip(".fasta")
+            dictionary[sample] = path_for_faa
 
 
-run_multiple_prodigal(intermediate_fasta_dir)
+    any2fasta(snakemake.input[0],intermediate_fasta_dir)
+    run_multiple_prodigal(intermediate_fasta_dir, threads = snakemake.threads)
 
 
 
-### Create symlinks for faa file
+    ### Create symlinks for faa file
 
-# get input_dir relative from output dir to create a relative symlink
-input_dir_rel = os.path.relpath(f"{prodigal_output}/faa/", snakemake.output[0])
-for sample_name in sample_names:
-
-    os.path.symlink(f"{input_dir_rel}/{sample_name}.faa",
-                    f"{snakemake.output[0]}/{sample_name}.faa" )
+    # get input_dir relative from output dir to create a relative symlink
+    os.makedirs(snakemake.output[0],exist_ok=True)
+    input_dir_rel = os.path.relpath(f"{prodigal_output}/faa/", snakemake.output[0])
+    for sample_name in sample_names:
+        part_path = dictionary[sample_name]
+        os.symlink(f"{input_dir_rel}/{part_path}/{sample_name}.faa",
+                        f"{snakemake.output[0]}/{sample_name}.faa" )

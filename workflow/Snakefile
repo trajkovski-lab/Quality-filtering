@@ -30,9 +30,15 @@ rule download_db:
         "mv {resources.tmpdir}/gunc_db_{wildcards.gunc_db_type}*.dmnd {output} 2>> {log}"
 
 
+if config['input_text_file'] == "":
+    make_lists_input = config["genomes"],
+else:
+    make_lists_input = config['input_text_file']
+
+
 checkpoint make_lists:
     input:
-        config["genomes"],
+        make_lists_input,
     output:
         directory("quality_filtering/intermediate_results/genome_list/"),
     log:
