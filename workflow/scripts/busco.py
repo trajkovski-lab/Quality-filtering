@@ -38,21 +38,24 @@ for i in snakemake.input.fasta_dir:
     glob_argument = f"{i}/*.faa"
     db_path = snakemake.config["database_folder"]
     for path in glob.glob(glob_argument):
-        sample_name = "".join(path.split("/")[-1].split(".")[:-1])
-        if snakemake.config["busco_parameters"] == "cluster_analysis":
-            lineage = "".join("".join(path.split("/")[-2]).split("-")[-1])
-            shell(
-                f"busco -i {path} -l {lineage} -m protein -o {sample_name} --download_path {db_path} --out_path {snakemake.params.working_dir} -c {snakemake.threads} &> {snakemake.log}"
-            )
-        elif "auto-lineage-prok" in snakemake.config["busco_parameters"]:
-            shell(
-                f"busco -i {path} --auto-lineage-prok -m protein -o {sample_name} --download_path {db_path} --out_path {snakemake.params.working_dir} -c {snakemake.threads} &> {snakemake.log}"
-            )
+        if (os.stat(path).st_size == 0) == False:
+            sample_name = "".join(path.split("/")[-1].split(".")[:-1])
+            if snakemake.config["busco_parameters"] == "cluster_analysis":
+                lineage = "".join("".join(path.split("/")[-2]).split("-")[-1])
+                shell(
+                    f"busco -i {path} -l {lineage} -m protein -o {sample_name} --download_path {db_path} --out_path {snakemake.params.working_dir} -c {snakemake.threads} &> {snakemake.log}"
+                )
+            elif "auto-lineage-prok" in snakemake.config["busco_parameters"]:
+                shell(
+                    f"busco -i {path} --auto-lineage-prok -m protein -o {sample_name} --download_path {db_path} --out_path {snakemake.params.working_dir} -c {snakemake.threads} &> {snakemake.log}"
+                )
+            else:
+                lineage = snakemake.config["busco_parameters"]
+                shell(
+                    f"busco -i {path} -l {lineage} -m protein -o {sample_name} --download_path {db_path} --out_path {snakemake.params.working_dir} -c {snakemake.threads} &> {snakemake.log}"
+                )
         else:
-            lineage = snakemake.config["busco_parameters"]
-            shell(
-                f"busco -i {path} -l {lineage} -m protein -o {sample_name} --download_path {db_path} --out_path {snakemake.params.working_dir} -c {snakemake.threads} &> {snakemake.log}"
-            )
+            logging.info(f"File {path} is empty!")
     glob_result = f"{snakemake.params.working_dir}/*/short_summary.specific.*.*.txt"
     for path_result in glob.glob(glob_result):
         sample_name = "".join(path_result.split("/")[-1].split(".")[-2])
