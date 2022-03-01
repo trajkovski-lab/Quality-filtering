@@ -97,12 +97,14 @@ def run_prodigal(input_fasta, parameters, out_dir, prodigal_output, dictionary):
     # run prodigal on one sample
     # stderr get raised and saved to log file
     sample_name = os.path.splitext(os.path.basename(input_fasta))[0]
-    path = dictionary[sample_name]
-    os.makedirs(f"{prodigal_output}/faa/{path}", exist_ok=True)
-    os.makedirs(f"{prodigal_output}/fna/{path}", exist_ok=True)
-    logging.info(f"Run prodigal on sample {sample_name}")
-    shell(f"prodigal {parameters} -i {input_fasta} -a {prodigal_output}/faa/{path}/{sample_name}.faa  -d {prodigal_output}/fna/{path}/{sample_name}.fna > /dev/null")
-
+    try:
+        path = dictionary[sample_name]
+        os.makedirs(f"{prodigal_output}/faa/{path}", exist_ok=True)
+        os.makedirs(f"{prodigal_output}/fna/{path}", exist_ok=True)
+        logging.info(f"Run prodigal on sample {sample_name}")
+        shell(f"prodigal {parameters} -i {input_fasta} -a {prodigal_output}/faa/{path}/{sample_name}.faa  -d {prodigal_output}/fna/{path}/{sample_name}.fna > /dev/null")
+    except:
+        logging.info(f"Couldn't run prodigal on {sample_name}. Countuing without it ...")
 
 def run_multiple_prodigal(input_dir, threads, extension=".fasta"):
 
@@ -125,6 +127,7 @@ if __name__ == "__main__":
     out_dir = "quality_filtering/"
     # create fasta dir
     intermediate_fasta_dir = f"{snakemake.config['temporary_dir']}/intermediate_results/fasta/{snakemake.wildcards.counter}-{snakemake.wildcards.lineage}"
+    #intermediate_fasta_dir = f"quality_filtering/intermediate_results/fasta/{snakemake.wildcards.counter}-{snakemake.wildcards.lineage}"
     os.makedirs(intermediate_fasta_dir, exist_ok=True)
 
     prodigal_output = snakemake.config.get('directory_faa', 'quality_filtering/faa_files')
@@ -136,8 +139,8 @@ if __name__ == "__main__":
         lines = f.readlines()
         for line in lines:
             full_sample = "".join(line.split('/')[-1])
-            sample = ".".join(full_sample.strip(".gz").split(".")[:-1]).strip(".fasta")
-            path_for_faa = "/".join(line.split("/")[-4:-1]).strip(".fasta")
+            sample = ".".join(full_sample.strip(".gz").split(".")[:-1]).strip(".fasta").strip(".fna")
+            path_for_faa = "/".join(line.split("/")[-4:-1]).strip(".fasta").strip(".fna")
             dictionary[sample] = path_for_faa
 
 

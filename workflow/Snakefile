@@ -62,7 +62,10 @@ rule prodigal:
         "quality_filtering/log/prodigal/{counter}-{lineage}.log",
     params:
         parameters="-q -p meta",
-    # threads: 4
+    threads: 8
+    resources:
+        mem_mb= 24 *1000,
+        time_min= 2*60
     conda:
         "env/prodigal.yaml"
     script:
