@@ -13,8 +13,14 @@ See also in [`config/default_config.yaml`](config/default_config.yaml)
 ## It  is important to keep the formatting of the config file (pay attention to two spaces at the beggining of every row!).
 
 ## Input
-genomes: /data/genomes/ #path to the base genome folder
-input_text_file: genome_paths.txt # absolute paths to genomes are being analyzed one per line 
+
+# option A: text file  with absolute paths to genomes are being analyzed one per line 
+input_text_file: genome_paths.txt 
+
+
+# option B: all genomes in a folder (set input_text_file to "")
+genomes: /data/genomes/ #path to genome folder
+
 
 # input format to be expected: enables having MAGs with different extensions (zipped or unzipped, .fasta/.fna, gff, anything that goes trough any2fasta)
 format1: .fasta.gz
