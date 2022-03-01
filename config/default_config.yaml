@@ -1,13 +1,13 @@
-genomes: ../../../genome/Rikenellaceae
-input_text_file: ../../../phylum_structure/rikenellaceae.txt
-temporary_dir: /scratch
+genomes: ../../../genome/Rikenellaceae #Path to the genomes folder
+input_text_file: ../../../phylum_structure/rikenellaceae.txt # txt file with paths to genomes are being analyzed
+temporary_dir: /scratch #this is a local scratch on our HPC
 directory_faa: faa_files #directory where faa files should be stored for after analysis
 format1: .fasta.gz
 format2: .fna.gz
-database_folder: ../../resources/database/
+database_folder: ../../resources/database/ # Where to download and after look at for both GUNC and BUSCO databases
 gunc_db_type: gtdb #progenomes or gtdb
 busco_parameters: cluster_analysis # specific lineage with -l flag or "cluster_analysis" or --auto-lineage-prok
-batch_size: 50
+batch_size: 50 # how many genomes in one batch
 all_genomes: ../../All_genomes.tsv #table where cluster is specified for every genome in genomes/ dir
 busco_output: ../../BUSCO_hq_reps_output.tsv #output for BUSCO representative run
 cluster_info: cluster95 #Which cluster was used to create previous busco output
