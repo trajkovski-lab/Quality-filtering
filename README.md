@@ -14,7 +14,7 @@ See also in [`config/default_config.yaml`](config/default_config.yaml)
 
 ## Input
 genomes: /data/genomes/ #path to the base genome folder
-input_text_file: rikenellaceae.txt # txt file with paths to genomes are being analyzed
+input_text_file: genome_paths.txt # absolute paths to genomes are being analyzed one per line 
 
 # input format to be expected: enables having MAGs with different extensions (zipped or unzipped, .fasta/.fna, gff, anything that goes trough any2fasta)
 format1: .fasta.gz
@@ -37,11 +37,6 @@ busco_output: ../../BUSCO_hq_reps_output.tsv #output for BUSCO representative ru
 cluster_info: cluster95 #Which cluster was used to create previous busco output
 ```
 
-Example of a `input_text_file`:
-
-```
-
-```
 
 
 
