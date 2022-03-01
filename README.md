@@ -5,19 +5,41 @@ This is a snakemake workflow made to integrate GUNC and BUSCO tools and run them
 It needs installed and working snakemake. Follow this [link](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html) for details.
 
 ## Config file
-It  is important to keep the formatting of the config file (pay attention to two spaces at the beggining of every row!).
 
-This is the meaning of the following parameters:
-1) genomes - path to the directory containing MAGs
-2) input_text_file - text file containing paths to each genome being analysed. This enables having complex directory structures
-3) temporary_dir - important when running on the HPC. Usually local scratch storage that has high I/O speeds
-4) directory_faa - directory where to store .faa and .fna output of the Prodigal tool
-5) format1, format2 - enables having MAGs with different extensions (zipped or unzipped, .fasta/.fna...)
-6) database_folder - path to the dir where to download both GUNC and BUSCO databases
-7) gunc_db_type - choose between gdtb and progenomes
-8) busco_parameters - set either '-l *lineage*' (lineage = official lineage from BUSCO docs), --auto-lineage-prok or cluster analysis (cluster analysis is a specific function you most likely don't need)
-8) batch_size - how many genomes in one batch
-9) all_genomes, busco_output, cluster_info - specific fields necessary only if busco_parameters == 'cluster_analysis'
+See also in [`config/default_config.yaml`](config/default_config.yaml)
+```yaml
+## It  is important to keep the formatting of the config file (pay attention to two spaces at the beggining of every row!).
+
+## Input
+genomes: /data/genomes/ #path to the base genome folder
+input_text_file: rikenellaceae.txt # txt file with paths to genomes are being analyzed
+
+# input format to be expected: enables having MAGs with different extensions (zipped or unzipped, .fasta/.fna, gff, anything that goes trough any2fasta)
+format1: .fasta.gz
+format2: .fna.gz
+
+batch_size: 50 # how many genomes in one batch
+
+temporary_dir: /tmp # important when running on the HPC. Usually local scratch storage that has high I/O speeds
+directory_faa: faa_files # (sub)directory where to store .faa and .fna output of the Prodigal tool
+database_folder: ../../resources/database/ # path to the dir where to download both GUNC and BUSCO databases
+
+gunc_db_type: gtdb # choose between gdtb and progenomes
+
+busco_parameters: --auto-lineage-prok #  set either '-l *lineage*' (lineage = official lineage from BUSCO docs), --auto-lineage-prok or cluster analysis (see below)
+
+
+# specific fields necessary only if busco_parameters == 'cluster_analysis'
+all_genomes: ../../All_genomes.tsv #table where cluster is specified for every genome in genomes/ dir
+busco_output: ../../BUSCO_hq_reps_output.tsv #output for BUSCO representative run
+cluster_info: cluster95 #Which cluster was used to create previous busco output
+```
+
+Example of a `input_text_file`:
+
+
+
+
 ## How to run it
 
 1) Create a working dir
