@@ -1,13 +1,25 @@
-genomes: ../../../genome/Rikenellaceae #Path to the genomes folder
-input_text_file: ../../../phylum_structure/rikenellaceae.txt # txt file with paths to genomes are being analyzed
-temporary_dir: /scratch #this is a local scratch on our HPC
-directory_faa: faa_files #directory where faa files should be stored for after analysis
+## It  is important to keep the formatting of the config file (pay attention to two spaces at the beggining of every row!).
+
+## Input
+genomes: /data/genomes/ #path to the base genome folder
+input_text_file: rikenellaceae.txt # txt file with paths to genomes are being analyzed
+
+# input format to be expected: enables having MAGs with different extensions (zipped or unzipped, .fasta/.fna, gff, anything that goes trough any2fasta)
 format1: .fasta.gz
 format2: .fna.gz
-database_folder: ../../resources/database/ # Where to download and after look at for both GUNC and BUSCO databases
-gunc_db_type: gtdb #progenomes or gtdb
-busco_parameters: cluster_analysis # specific lineage with -l flag or "cluster_analysis" or --auto-lineage-prok
+
 batch_size: 50 # how many genomes in one batch
+
+temporary_dir: /tmp # important when running on the HPC. Usually local scratch storage that has high I/O speeds
+directory_faa: faa_files # (sub)directory where to store .faa and .fna output of the Prodigal tool
+database_folder: ../../resources/database/ # path to the dir where to download both GUNC and BUSCO databases
+
+gunc_db_type: gtdb # choose between gdtb and progenomes
+
+busco_parameters: --auto-lineage-prok #  set either '-l *lineage*' (lineage = official lineage from BUSCO docs), --auto-lineage-prok or cluster analysis (see below)
+
+
+# specific fields necessary only if busco_parameters == 'cluster_analysis'
 all_genomes: ../../All_genomes.tsv #table where cluster is specified for every genome in genomes/ dir
 busco_output: ../../BUSCO_hq_reps_output.tsv #output for BUSCO representative run
 cluster_info: cluster95 #Which cluster was used to create previous busco output
