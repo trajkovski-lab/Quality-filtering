@@ -38,6 +38,7 @@ for i in snakemake.input.fasta_dir:
     glob_argument = f"{i}/*.faa"
     db_path = snakemake.config["database_folder"]
     for path in glob.glob(glob_argument):
+<<<<<<< HEAD
         if (os.stat(path).st_size == 0) == False: 
             sample_name = "".join(path.split("/")[-1].split(".")[:-1])
             try:
@@ -57,6 +58,24 @@ for i in snakemake.input.fasta_dir:
                     )
             except:
                 logging.info(f"BUSCO analysis for {sample_name} failed! Moving forward without it...")
+=======
+        if (os.stat(path).st_size == 0) == False:
+            sample_name = "".join(path.split("/")[-1].split(".")[:-1])
+            if snakemake.config["busco_parameters"] == "cluster_analysis":
+                lineage = "".join("".join(path.split("/")[-2]).split("-")[-1])
+                shell(
+                    f"busco -i {path} -l {lineage} -m protein -o {sample_name} --download_path {db_path} --out_path {snakemake.params.working_dir} -c {snakemake.threads} &> {snakemake.log}"
+                )
+            elif "auto-lineage-prok" in snakemake.config["busco_parameters"]:
+                shell(
+                    f"busco -i {path} --auto-lineage-prok -m protein -o {sample_name} --download_path {db_path} --out_path {snakemake.params.working_dir} -c {snakemake.threads} &> {snakemake.log}"
+                )
+            else:
+                lineage = snakemake.config["busco_parameters"]
+                shell(
+                    f"busco -i {path} -l {lineage} -m protein -o {sample_name} --download_path {db_path} --out_path {snakemake.params.working_dir} -c {snakemake.threads} &> {snakemake.log}"
+                )
+>>>>>>> 34c2c10ccbde7a5ee8216a750ab1d162a5118977
         else:
             logging.info(f"File {path} is empty!")
     glob_result = f"{snakemake.params.working_dir}/*/short_summary.specific.*.*.txt"
