@@ -49,7 +49,7 @@ cluster_info: cluster95 #Which cluster was used to create previous BUSCO output
 ## How to test it
 1) Clone this repo and make a test_run directory inside it:
 ```bash
-git clone ...
+git clone https://github.com/trajkovski-lab/Quality-filtering.git
 cd Quality-filtering
 mkdir test_run
 ```
