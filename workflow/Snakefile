@@ -29,6 +29,18 @@ rule download_db:
         "gunc download_db {resources.tmpdir} -db {wildcards.gunc_db_type} &> {log} ;"
         "mv {resources.tmpdir}/gunc_db_{wildcards.gunc_db_type}*.dmnd {output} 2>> {log}"
 
+rule download_busco:
+    output:
+        db = os.path.join(config["database_folder"], "lineages")
+    conda:
+        "env/busco.yaml",
+    log:
+        "quality_filtering/log/busco/download_database.log"
+    params:
+        database_dir = config['database_folder']
+    shell:
+        "busco --download_path {params.database_dir} --download all"
+
 
 if config['input_text_file'] == "":
     make_lists_input = config["genomes"],
