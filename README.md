@@ -10,16 +10,16 @@ It needs installed and working snakemake. Follow this [link](https://snakemake.r
 
 See also in [`config/default_config.yaml`](config/default_config.yaml)
 ```yaml
-## It  is important to keep the formatting of the config file (pay attention to two spaces at the beggining of every row!).
+## It  is important to keep the formatting of the config file (pay attention to two spaces at the beginning of every row!).
 
 ## Input
 
-# option A: text file  with absolute paths to genomes are being analyzed one per line 
-input_text_file: genome_paths.txt 
+# option A: text file  with absolute paths to genomes are being analysed one per line 
+input_text_file: directory_structure.txt
 
 
 # option B: all genomes in a folder (set input_text_file to "")
-genomes: /data/genomes/ #path to genome folder
+genomes: genome #path to genome folder
 
 
 # input format to be expected: enables having MAGs with different extensions (zipped or unzipped, .fasta/.fna, gff, anything that goes trough any2fasta)
@@ -40,28 +40,40 @@ busco_parameters: --auto-lineage-prok #  set either '-l *lineage*' (lineage = of
 # specific fields necessary only if busco_parameters == 'cluster_analysis'
 all_genomes: ../../All_genomes.tsv #table where cluster is specified for every genome in genomes/ dir
 busco_output: ../../BUSCO_hq_reps_output.tsv #output for BUSCO representative run
-cluster_info: cluster95 #Which cluster was used to create previous busco output
+cluster_info: cluster95 #Which cluster was used to create previous BUSCO output
 ```
 
 
 
 
-## How to run it
-
-1) Create a working dir
-2) Run the workflow with appropriate arguments, e.g. on HPC:
+## How to test it
+1) Clone this repo and make a test_run directory inside it:
 ```bash
-snakemake --default-resources mem_mb=12000 time=300 -j 10 -s ../workflow/Snakefile --profile cluster
+git clone ...
+cd Quality-filtering
+mkdir test_run
+```
+2) Download and unzip test data from [this Zenodo link:](https://zenodo.org/record/6322941)
+```bash
+cd test_run
+wget https://zenodo.org/record/6322941/files/genome.tar.gz
+wget https://zenodo.org/record/6322941/files/directory_structure.txt
+tar -xvzf genome.tar.gz
+```
+3) Use dry-run feature of snakemake to test the workflow and if everything is working, run it:
+```bash
+snakemake -s ../workflow/Snakefile -j 5 -c 4 -np
+snakemake -s ../workflow/Snakefile -j 5 -c 4
 ```
 Consult [snakemake docs](https://snakemake.readthedocs.io/en/stable/executing/cli.html) for more details about command-line interface.
 
 ## Cluster workflow
 
-The cluster workflow is intended for **re-evaluation of genome quality estimation** on a per species basis. The commonly used tools for genome quality estimation, e.g. CheckM and BUSCO have the option to automatically choose the best reference set of marker genes for the given genome. This is very usefull, but can also induce some bias. For example, let's take a set of genomes expected to be from the same species (e.g. ANI <= 95%). Genomes in this set might be evaluated on strikingly different reference set because they were automatically selected by BUSCO. In the extreme case a very "bad" genome could have a better quality score than a bery "good" genome just because it was evaluated on the root marker gene set. 
+The cluster workflow is intended for **re-evaluation of genome quality estimation** on a per species basis. The commonly used tools for genome quality estimation, e.g. CheckM and BUSCO have the option to automatically choose the best reference set of marker genes for the given genome. This is very useful, but can also induce some bias. For example, let's take a set of genomes expected to be from the same species (e.g. ANI <= 95%). Genomes in this set might be evaluated on strikingly different reference set because they were automatically selected by BUSCO. In the extreme case a very "bad" genome could have a better quality score than a bery "good" genome just because it was evaluated on the root marker gene set. 
 
-To avoid this we came up with the idea of this workflow where we run the Workflow once on all species (cluster) representetives and then use the same busco lineage for all genomes in this cluster. This guarantees that all genomes in a cluster are compared with the same measure. It also accelerates the BUSCO run.
+To avoid this we came up with the idea of this workflow where we run the Workflow once on all species (cluster) representatives and then use the same BUSCO lineage for all genomes in this cluster. This guarantees that all genomes in a cluster are compared with the same measure. It also accelerates the BUSCO run.
 
-We made this workflow to re-filter the genomes from HumGut but the aproach can be generalized to any genomes that are clustered. 
+We made this workflow to re-filter the genomes from HumGut but the approach can be generalised to any genomes that are clustered. 
 
 TODO: For the cluster workflow you need 
 
