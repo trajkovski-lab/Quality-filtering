@@ -3,22 +3,22 @@
 ## Input
 
 # option A: text file  with absolute paths to genomes are being analyzed one per line 
-input_text_file: genome_paths.txt 
+input_text_file: directory_structure.txt 
 
 
 # option B: all genomes in a folder (set input_text_file to "")
-genomes: /data/genomes/ #path to genome folder
+genomes: genome #path to genome folder
 
 
 # input format to be expected: enables having MAGs with different extensions (zipped or unzipped, .fasta/.fna, gff, anything that goes trough any2fasta)
 format1: .fasta.gz
 format2: .fna.gz
 
-batch_size: 50 # how many genomes in one batch
+batch_size: 5 # how many genomes in one batch
 
-temporary_dir: /tmp # important when running on the HPC. Usually local scratch storage that has high I/O speeds
+temporary_dir: /scratch # important when running on the HPC. Usually local scratch storage that has high I/O speeds
 directory_faa: faa_files # (sub)directory where to store .faa and .fna output of the Prodigal tool
-database_folder: ../../resources/database/ # path to the dir where to download both GUNC and BUSCO databases
+database_folder: ../../../shared_scratch/HumGut/Quality-filtering/resources/database # path to the dir where to download both GUNC and BUSCO databases
 
 gunc_db_type: gtdb # choose between gdtb and progenomes
 

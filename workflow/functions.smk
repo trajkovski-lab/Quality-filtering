@@ -46,7 +46,7 @@ def calculate_N_batches():
                         logger.warning(f"Genome {genome_path} doesn't exist or is empty!")
 
         if N_files==0 :
-                logger.critical("Didn't found genomes in folder {genomes} with extension {format1} or {fomrat2}".format(**config))
+                logger.warning("Didn't found genomes in folder {genomes} with extension {format1} or {fomrat2}".format(**config))
                 exit(1)
         
         config['N_batches'] = N_files // config['batch_size'] + 1
