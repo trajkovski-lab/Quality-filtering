@@ -6,9 +6,7 @@ import os
 configfile: f"{os.path.dirname(workflow.snakefile)}/../config/default_config.yaml"
 
 
-if config["busco_parameters"] == "cluster_analysis":
-    pass
-else:
+if config["busco_parameters"] != "cluster_analysis":
     include: "functions.smk"
 
 
