@@ -5,6 +5,7 @@ import os
 
 configfile: f"{os.path.dirname(workflow.snakefile)}/../config/default_config.yaml"
 
+localrules: download_db, download_busco
 
 if config["busco_parameters"] != "cluster_analysis":
     include: "functions.smk"
@@ -55,7 +56,7 @@ checkpoint make_lists:
         "quality_filtering/log/make_lists.log"
     resources:
         mem_mb= 10 *1000,
-        time_min= 24 * 60
+        time_min= 30
     threads: 1
     script:
         "scripts/make_lists.py"
