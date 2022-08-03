@@ -133,7 +133,8 @@ rule run_busco:
     input:
         fasta_dir=rules.prodigal.output,
     output:
-        "quality_filtering/intermediate_results/busco_tables/{counter}-{lineage}.tsv",
+        #"quality_filtering/intermediate_results/busco_tables/{counter}-{lineage}.tsv",
+        busco_output = directory(f"quality_filtering/intermediate_results/busco_output/{{counter}}-{{lineage}}/"),
     conda:
         "env/busco.yaml"
     log:
@@ -145,22 +146,22 @@ rule run_busco:
     threads: 4
     resources:
         mem_mb=24000,
-        time_min=5*60
+        time_min=3*60
     script:
         "scripts/busco.py"
 
 
-def concatenate_busco_input(wildcards):
+def concatenate_busco_output(wildcards):
     list_folder = checkpoints.make_lists.get(**wildcards).output[0]
     all_lists = glob_wildcards(os.path.join(list_folder, "{list}.txt")).list
     return expand(
-        "quality_filtering/intermediate_results/busco_tables/{list}.tsv", list=all_lists
+        "quality_filtering/intermediate_results/busco_output/{list}/", list=all_lists
     )
 
 
 rule concatenate_busco:
     input:
-        concatenate_busco_input,
+        concatenate_busco_output,
     output:
         "quality_filtering/BUSCO_output.tsv",
     log:
