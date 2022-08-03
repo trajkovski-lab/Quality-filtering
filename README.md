@@ -10,21 +10,21 @@ It needs installed and working snakemake. Follow this [link](https://snakemake.r
 
 See also in [`config/default_config.yaml`](config/default_config.yaml)
 ```yaml
-## It  is important to keep the formatting of the config file (pay attention to two spaces at the beginning of every row!).
+## It  is important to keep the formatting of the config file (pay attention to two spaces at the beggining of every row!).
 
 ## Input
 
-# option A: text file  with absolute paths to genomes are being analysed one per line 
+# option A: text file  with absolute paths to genomes, one per line 
 input_text_file: directory_structure.txt
 
 
 # option B: all genomes in a folder (set input_text_file to "")
-genomes: genome #path to genome folder
+genomes: genome #path to a dir with genomes
 
 
 # input format to be expected: enables having MAGs with different extensions (zipped or unzipped, .fasta/.fna, gff, anything that goes trough any2fasta)
-format1: .fasta.gz
-format2: .fna.gz
+format1: .fna.gz
+format2: .fasta.gz
 
 batch_size: 50 # how many genomes in one batch
 
@@ -32,15 +32,29 @@ temporary_dir: /tmp # important when running on the HPC. Usually local scratch s
 directory_faa: faa_files # (sub)directory where to store .faa and .fna output of the Prodigal tool
 database_folder: ../../resources/database/ # path to the dir where to download both GUNC and BUSCO databases
 
-gunc_db_type: gtdb # choose between gdtb and progenomes
+gunc_db_type: gtdb # choose between gtdb and progenomes
 
 busco_parameters: --auto-lineage-prok #  set either '-l *lineage*' (lineage = official lineage from BUSCO docs), --auto-lineage-prok or cluster analysis (see below)
+save_busco_output: False # If True, write busco output in temporary_dir. Else, write in main output dir. 
+
+#Resources
+threads: 8 # number of threads
+
+mem_mb_prodigal: 12000 # memory in MB
+time_min_prodigal: 30 # time in minutes
+
+mem_mb_gunc: 24000 # memory in MB
+time_min_gunc: 60 # time in minutes
+
+mem_mb_busco: 12000 # memory in MB
+time_min_busco: 180 # time in minutes
 
 
 # specific fields necessary only if busco_parameters == 'cluster_analysis'
-all_genomes: ../../All_genomes.tsv #table where cluster is specified for every genome in genomes/ dir
+all_genomes: ../../All_genomes.tsv # table where cluster is specified for every genome in genomes/ dir
 busco_output: ../../BUSCO_hq_reps_output.tsv #output for BUSCO representative run
-cluster_info: cluster95 #Which cluster was used to create previous BUSCO output
+cluster_info: cluster95 #Which cluster was used to create previous busco output
+
 ```
 
 
