@@ -56,7 +56,7 @@ else:
         for line in lines:
             path = line.strip("\n")
             all_genomes_in_dir.append(path)
-batch_size = snakemake.config["batch_size"]
+batch_size = int(snakemake.config["batch_size"])
 N_batches = len(all_genomes_in_dir) // batch_size + 1
 os.makedirs("quality_filtering/intermediate_results/genome_list/", exist_ok=True)
 # if no other table is specified in default_config

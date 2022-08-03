@@ -73,10 +73,10 @@ rule prodigal:
         "quality_filtering/log/prodigal/{counter}-{lineage}.log",
     params:
         parameters="-q -p meta",
-    threads: 8
+    threads: config['threads']
     resources:
-        mem_mb= 24 *1000,
-        time_min= 2*60
+        mem_mb= config['mem_mb_prodigal'],
+        time_min= config['time_min_prodigal']
     conda:
         "env/prodigal.yaml"
     script:
@@ -95,10 +95,10 @@ rule run_gunc:
         "quality_filtering/log/gunc/run_{counter}-{lineage}.log",
     benchmark:
         "quality_filtering/log/benchmark/gunc/{counter}-{lineage}.tsv"
-    threads: 8
+    threads: config['threads']
     resources:
-        mem_mb=24000,
-        time_min=5*60
+        mem_mb=config['mem_mb_gunc'],
+        time_min=config['time_min_gunc']
     params:
         working_dir=f"{config['temporary_dir']}/results_gunc/{{counter}}-{{lineage}}",
     shell:
@@ -133,7 +133,6 @@ rule run_busco:
     input:
         fasta_dir=rules.prodigal.output,
     output:
-        #"quality_filtering/intermediate_results/busco_tables/{counter}-{lineage}.tsv",
         busco_output = directory(f"quality_filtering/intermediate_results/busco_output/{{counter}}-{{lineage}}/"),
     conda:
         "env/busco.yaml"
@@ -143,10 +142,10 @@ rule run_busco:
         "quality_filtering/log/benchmark/busco/{counter}-{lineage}.tsv"
     params:
         working_dir=f"{config['temporary_dir']}/results_busco/{{counter}}-{{lineage}}/",
-    threads: 4
+    threads: config['threads']
     resources:
-        mem_mb=24000,
-        time_min=3*60
+        mem_mb=config['mem_mb_busco'],
+        time_min=config['time_min_busco']
     script:
         "scripts/busco.py"
 

@@ -30,10 +30,12 @@ def calculate_N_batches():
         logger.info("Calculate number of batches")
 
         if config['input_text_file'] == "":
-            N_files = len( glob.glob(os.path.join( config['genomes'] ,"*" + config["format1"])) )
+            files = glob.glob(os.path.join( config['genomes'] ,"*" + config["format1"]))
 
             if config["format2"] is not None:
-                N_files += len( glob.glob(os.path.join( config['genomes'] ,"*" + config["format2"])) )
+                files.extend( glob.glob(os.path.join( config['genomes'] ,"*" + config["format2"])) )
+        
+            N_files = len(set(files))
         else: 
             N_files = 0
             with open(config['input_text_file'],'r') as f:
