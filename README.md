@@ -35,7 +35,7 @@ database_folder: ../../resources/database/ # path to the dir where to download b
 gunc_db_type: gtdb # choose between gtdb and progenomes
 
 busco_parameters: --auto-lineage-prok #  set either '-l *lineage*' (lineage = official lineage from BUSCO docs), --auto-lineage-prok or cluster analysis (see below)
-save_busco_output: False # If True, write busco output in temporary_dir. Else, write in main output dir. 
+save_busco_output: False # If True, write the whole busco output in main output dir. Else, write in temporary_dir.
 
 #Resources
 threads: 8 # number of threads
@@ -83,7 +83,7 @@ Consult [snakemake docs](https://snakemake.readthedocs.io/en/stable/executing/cl
 
 ## Cluster workflow
 
-The cluster workflow is intended for **re-evaluation of genome quality estimation** on a per species basis. The commonly used tools for genome quality estimation, e.g. CheckM and BUSCO have the option to automatically choose the best reference set of marker genes for the given genome. This is very useful, but can also induce some bias. For example, let's take a set of genomes expected to be from the same species (e.g. ANI <= 95%). Genomes in this set might be evaluated on strikingly different reference set because they were automatically selected by BUSCO. In the extreme case a very "bad" genome could have a better quality score than a bery "good" genome just because it was evaluated on the root marker gene set. 
+The cluster workflow is intended for **re-evaluation of genome quality estimation** on a per species basis. The commonly used tools for genome quality estimation, e.g. CheckM and BUSCO have the option to automatically choose the best reference set of marker genes for the given genome. This is very useful, but can also induce some bias. For example, let's take a set of genomes expected to be from the same species (e.g. ANI <= 95%). Genomes in this set might be evaluated on strikingly different reference set because they were automatically selected by BUSCO. In the extreme case a very "bad" genome could have a better quality score than a very "good" genome just because it was evaluated on the root marker gene set. 
 
 To avoid this we came up with the idea of this workflow where we run the Workflow once on all species (cluster) representatives and then use the same BUSCO lineage for all genomes in this cluster. This guarantees that all genomes in a cluster are compared with the same measure. It also accelerates the BUSCO run.
 
