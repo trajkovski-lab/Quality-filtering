@@ -35,7 +35,7 @@ database_folder: ../../resources/database/ # path to the dir where to download b
 gunc_db_type: gtdb # choose between gtdb and progenomes
 
 busco_parameters: --auto-lineage-prok #  set either '-l *lineage*' (lineage = official lineage from BUSCO docs), --auto-lineage-prok or cluster analysis (see below)
-save_busco_output: False # If True, write the whole busco output in main output dir. Else, write in temporary_dir.
+save_busco_output: False # If True, write the whole busco output in main output dir. Else, only tables containing quality metrics will be kept.
 
 #Resources
 threads: 8 # number of threads
