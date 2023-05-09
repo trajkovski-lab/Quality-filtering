@@ -116,6 +116,16 @@ def run_multiple_prodigal(input_dir, threads, extension=".fasta"):
     pool = Pool(int(threads))
     pool.starmap(run_prodigal, zip(genomes_fastas, repeat(snakemake.params), repeat(out_dir), repeat(prodigal_output), repeat(dictionary)))
 
+def prepare_faa_paths(paths):
+    dictionary = collections.defaultdict()
+    for path in paths:
+        full_sample = os.path.basename(path)
+        sample = full_sample.rstrip(snakemake.config['format1']).rstrip(snakemake.config['format2'])
+        path_for_faa = "/".join(path.split("/")[-4:-1]).rstrip(snakemake.config['format1']).rstrip(snakemake.config['format2'])
+        dictionary[sample] = path_for_faa
+    
+    return dictionary
+
 if __name__ == "__main__":
 
     logging.basicConfig(
@@ -133,23 +143,14 @@ if __name__ == "__main__":
     for subfolders in ["faa","fna"]:
         os.makedirs(f"{prodigal_output}/{subfolders}",exist_ok=True)
 
-    dictionary = collections.defaultdict()
     if snakemake.config['input_text_file'] != "":
         with open(snakemake.config['input_text_file'],'r') as f:
             lines = f.readlines()
-            for line in lines:
-                full_sample = "".join(line.split('/')[-1])
-                sample = os.path.basename(".".join(full_sample.strip(".gz").split(".")[:-1]))
-                path_for_faa = os.path.basename("/".join(line.split("/")[-4:-1]))
-                dictionary[sample] = path_for_faa
-    else:
-        with open(snakemake.input[0],'r') as f:
-            lines = f.readlines()
-            for line in lines:
-                full_sample = line.split('/')[-1]
-                sample = os.path.splitext(full_sample.strip('.gz'))[0]
-                path_for_faa = os.path.basename("/".join(line.split("/")[-4:-1]))
-                dictionary[sample] = path_for_faa
+            dictionary = prepare_faa_paths(lines)
+    elif snakemake.config['genomes'] != "":
+        paths = glob(f"{snakemake.config['genomes']}/*{snakemake.config['format1']}")
+        paths.extend(glob(f"{snakemake.config['genomes']}/*{snakemake.config['format2']}"))
+        dictionary = prepare_faa_paths(paths)
 
     any2fasta(snakemake.input[0],intermediate_fasta_dir)
     run_multiple_prodigal(intermediate_fasta_dir, threads = snakemake.threads)
