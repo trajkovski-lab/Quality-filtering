@@ -15,6 +15,7 @@ rule all:
     input:
         "quality_filtering/GUNC_output.tsv",
         "quality_filtering/BUSCO_output.tsv",
+        "quality_filtering/checkm2_output.tsv"
 
 ###rule checkm2_db_download: #TODO
 
