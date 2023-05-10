@@ -125,8 +125,14 @@ rule concatenate_gunc:
         "quality_filtering/GUNC_output.tsv",
     log:
         "quality_filtering/log/concatinate_gunc.log"
-    script:
-        "scripts/concatenate_gunc.py"
+    conda:
+        "env/csvtk.yaml"
+    threads: 1
+    resources:
+        time_min=30,
+        mem_mb=12000
+    shell:
+        "csvtk concat -I -T -o {output[0]} -t quality_filtering/intermediate_results/gunc_tables/*.tsv"
 
 
 rule run_busco:
