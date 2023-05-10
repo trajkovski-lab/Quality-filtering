@@ -17,7 +17,20 @@ rule all:
         "quality_filtering/BUSCO_output.tsv",
         "quality_filtering/checkm2_output.tsv"
 
-###rule checkm2_db_download: #TODO
+rule checkm2_download_db:
+    output:
+        directoryos.path.join(config["database_folder"], "CheckM2"),
+    conda:
+        "env/checkm2.yaml"
+    threads: 1
+    log:
+        "quality_filtering/log/check2/download.log",
+    resources:
+        time_min=config['db_download_time_min'],
+        mem_mb=config['db_download_mem_mb']
+    shell:
+        " checkm2 database --download --path {output} "
+        " &>> {log}"
 
 rule download_db:
     output:
