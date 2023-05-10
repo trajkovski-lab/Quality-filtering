@@ -32,13 +32,15 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 # Install exception handler
 sys.excepthook = handle_exception
 
-final_df = pd.DataFrame()
-for input_dir in snakemake.input:
-    table = f"{input_dir}/batch_summary.txt"
-    logger.info(f"Found {table} table! Concatenating it to BUSCO_output.tsv . . .")
-    busco_intermediary = pd.read_csv(table, sep="\t").dropna().drop(['Scores_archaea_odb10','Scores_bacteria_odb10','Scores_eukaryota_odb10'],axis=1)
-    busco_intermediary.eval("Completeness = (Complete + 0.5 * Fragmented)/100",inplace=True)
-    busco_intermediary.eval("Contamination = Duplicated / 100",inplace=True)
-    busco_intermediary.eval("Quality_score = Completeness - 5*Contamination - (Fragmented/100)",inplace=True)
-    final_df = final_df.append(busco_intermediary, ignore_index=True)
-    final_df.to_csv(snakemake.output[0], sep="\t", index=False)
+# Script starts here
+
+tables = [pd.read_csv(f"{input_dir}/batch_summary.txt", sep='\t', on_bad_lines='warn') for input_dir in snakemake.input]
+df = pd.concat(tables, ignore_index=True)
+
+df = df.drop(['Scores_archaea_odb10','Scores_bacteria_odb10','Scores_eukaryota_odb10'], axis=1)
+
+df = df.eval("Completeness = (Complete + 0.5 * Fragmented)/100")
+df = df.eval("Contamination = Duplicated / 100")
+df = df.eval("Quality_score = Completeness - 5*Contamination - (Fragmented/100)")
+
+df.to_csv(snakemake.output[0], sep="\t", index=False)
