@@ -37,6 +37,11 @@ time_min_gunc: 60 # time in minutes
 mem_mb_busco: 12000 # memory in MB
 time_min_busco: 180 # time in minutes
 
+mem_mb_checkm2: 12000 # memory in MB
+time_min_checkm2: 60 # time in minutes
+
+db_download_time_min: 320 # time in minutes
+db_download_mem_mb: 24000 # memory in MB
 
 # specific fields necessary only if busco_parameters == 'cluster_analysis'
 all_genomes: ../../All_genomes.tsv # table where cluster is specified for every genome in genomes/ dir

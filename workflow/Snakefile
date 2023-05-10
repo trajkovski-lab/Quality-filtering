@@ -15,7 +15,22 @@ rule all:
     input:
         "quality_filtering/GUNC_output.tsv",
         "quality_filtering/BUSCO_output.tsv",
+        "quality_filtering/checkm2_output.tsv"
 
+rule checkm2_download_db:
+    output:
+        directoryos.path.join(config["database_folder"], "CheckM2"),
+    conda:
+        "env/checkm2.yaml"
+    threads: 1
+    log:
+        "quality_filtering/log/check2/download.log",
+    resources:
+        time_min=config['db_download_time_min'],
+        mem_mb=config['db_download_mem_mb']
+    shell:
+        " checkm2 database --download --path {output} "
+        " &>> {log}"
 
 rule download_db:
     output:
@@ -173,3 +188,42 @@ rule concatenate_busco:
         "quality_filtering/log/concatinate_busco.log",
     script:
         "scripts/concatenate_busco.py"
+
+rule run_checkm2:
+    input:
+       fasta_dir=rules.prodigal.output,
+    output:
+        "quality_filtering/intermediate_results/checkm2/{counter}-{lineage}.tsv"
+    conda:
+        "env/checkm2.yaml"
+    log:
+        "quality_filtering/log/checkm2/run_{counter}-{lineage}.log",
+    benchmark:
+        "quality_filtering/log/benchmark/checkm2/{counter}-{lineage}.tsv"
+    params:
+        working_dir=f"{config['temporary_dir']}/results_checkm2/{{counter}}-{{lineage}}/",
+    threads: config['threads']
+    resources:
+        mem_mb=config['mem_mb_checkm2'],
+        time_min=config['time_min_checkm2']
+    shell:
+        "mkdir -p {params.working_dir} "
+        "&& checkm2 predict --threads {threads} --input {input.fasta.dir} --genes --output-directory {params.working_dir} -x .faa &> {log} "
+        "&& mv {params.working_dir}/quality_report.tsv {output}"
+
+def concatenate_checkm2_output(wildcards):
+    list_folder = checkpoints.make_lists.get(**wildcards).output[0]
+    all_lists = glob_wildcards(os.path.join(list_folder, "{list}.txt")).list
+    return expand(
+        "quality_filtering/intermediate_results/checkm2/{list}.tsv", list=all_lists
+    )
+
+rule concatenate_checkm2:
+    input:
+        concatenate_checkm2_output,
+    output:
+        "quality_filtering/checkm2_output.tsv",
+    log:
+        "quality_filtering/log/concatinate_checkm2.log",
+    script:
+        "scripts/concatenate_checkm2.py"
